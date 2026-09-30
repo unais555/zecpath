@@ -23,7 +23,7 @@ class UserRegistrationSerializers(serializers.ModelSerializer):
 class CandidateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateProfile
-        fields = ['id', 'skills', 'education', 'experience', 'expected_salary']
+        fields = ['id', 'skills', 'education', 'experience', 'expected_salary', 'resume']
         
 
 class EmployerProfileSerializer(serializers.ModelSerializer):

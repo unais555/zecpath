@@ -1,4 +1,7 @@
 from django.db import models
+import uuid
+import os
+from .validators import validate_resume_extentions, validate_resume_size
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 
@@ -22,6 +25,11 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
+
+def resume_upload_path(instance, filename):
+    ext = filename.split('.')[-1].lower()
+    new_filename = f"candidate_{instance.user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+    return f"resumes/{new_filename}"
 
 
 class User(AbstractUser):
@@ -71,6 +79,12 @@ class EmployerProfile(models.Model):
 
 class CandidateProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="candidate_profile")
+    resume = models.FileField(
+        upload_to=resume_upload_path,
+        validators=[validate_resume_size, validate_resume_extentions],
+        blank = True,
+        null= True,
+    )
     skills = models.TextField(
         blank=True, 
         help_text="Comma-separated list of skills (e.g., Python, Django, React)"

@@ -90,7 +90,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME" : timedelta(minutes=15),
+    "ACCESS_TOKEN_LIFETIME" : timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME" : timedelta(days=7),
     "ROTATE_REFRESH_TOKEN" : True,
     "BLACKLIST_AFTER_ROTATION" : True,
@@ -148,6 +148,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
