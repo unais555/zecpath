@@ -7,6 +7,7 @@ from .views import (
     CandidateDashboardAPIView,
     CandidateProfileDetailAPIView,
     EmployerProfileDetailAPIView,
+    EmployerListAPIView,
 )
 
 
@@ -20,6 +21,8 @@ urlpatterns = [
     path('dashboard/candidate/', CandidateDashboardAPIView.as_view(), name='candidate_dashboard'),
 
     path('profile/employer/<int:pk>/', EmployerProfileDetailAPIView.as_view(), name="employer_profile_detail"), 
-    path('profile/candidate/<int:pk>/', CandidateProfileDetailAPIView.as_view(), name="candidate_profile_detail"), 
+    path('profile/candidate/<int:pk>/', CandidateProfileDetailAPIView.as_view(), name="candidate_profile_detail"),
+
+    path('employers/', EmployerListAPIView.as_view(), name="employer"),
 ]
 

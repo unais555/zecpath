@@ -7,6 +7,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializers, CandidateProfileSerializer, EmployerProfileSerializer
 from .permissions import IsCandidate, IsEmployer, IsOwnerOrAdmin
 from .models import EmployerProfile, CandidateProfile
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from .services import deactivate_user_account
 
 
 class SignupAPIView(generics.CreateAPIView):
@@ -53,9 +56,8 @@ class EmployerProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
 
     def perform_destroy(self, instance):
-        user = instance.user
-        user.is_active = False
-        user.save()
+        deactivate_user_account(instance.user)
+        
 
 class CandidateProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CandidateProfile.objects.all()
@@ -63,6 +65,17 @@ class CandidateProfileDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
 
     def perform_destroy(self, instance):
-        user = instance.user
-        user.is_active = False
-        user.save()
+        deactivate_user_account(instance.user)
+
+class EmployerListAPIView(generics.ListAPIView):
+    queryset = EmployerProfile.objects.get_queryset()
+    serializer_class = EmployerProfileSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [ DjangoFilterBackend, SearchFilter, OrderingFilter ]
+
+    filterset_fields = ['size', 'is_verified', 'domain']
+    search_fields = ['company_name', 'domain']
+    ordering_fields = ['company_name']
+
+    def get_queryset(self):
+        return EmployerProfile.objects.select_related('user').all()

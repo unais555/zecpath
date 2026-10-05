@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import CandidateProfile, EmployerProfile
+from .services import create_user_account
 
 User = get_user_model()
 
@@ -12,7 +13,7 @@ class UserRegistrationSerializers(serializers.ModelSerializer):
         fields = ["email", "phone", "password", "role"]
 
     def create(self, validated_data):
-        user= User.objects.create_user(
+        user = create_user_account(
             email = validated_data['email'],
             phone = validated_data.get('phone', ''),
             password = validated_data["password"],
