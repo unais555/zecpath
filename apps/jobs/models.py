@@ -16,16 +16,16 @@ class Job(models.Model):
         CLOSED = "closed", "Closed"
 
     employer = models.ForeignKey(EmployerProfile, on_delete=models.CASCADE, related_name="jobs")
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, db_index=True)
     description = models.TextField()
-    skills = models.CharField(max_length=255)
+    skills = models.CharField(max_length=255, db_index=True)
     experience = models.PositiveIntegerField()
     min_salary = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     max_salary = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     location = models.CharField(max_length=255)
     job_type = models.CharField(max_length=20, choices=JobType.choices, default=JobType.FULLL_TIME)
-    status = models.CharField(max_length=20, choices=JobStatus.choices, default=JobStatus.DRAFT)
-    is_active = models.BooleanField(default=True)
+    status = models.CharField(max_length=20, choices=JobStatus.choices, default=JobStatus.DRAFT, db_index=True)
+    is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
