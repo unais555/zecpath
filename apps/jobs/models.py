@@ -2,6 +2,7 @@ from django.db import models
 from apps.users.models import EmployerProfile
 from django.core.exceptions import ValidationError
 from apps.users.models import CandidateProfile
+from django.conf import settings
 
 
 
@@ -45,10 +46,10 @@ class Job(models.Model):
 class Application(models.Model):
     class ApplicationStatus(models.TextChoices):
         APPLIED = 'applied', 'Applied'
-        REVIEWED = 'reviewed', 'Under Review'
         SHORTLISTED = 'shortlisted', 'Shortlisted'
+        INTERVIEW_SCHEDULED = 'interview_scheduled', 'Interview Scheduled'
         REJECTED = 'rejected', 'Rejected'
-        HIRED = 'hired', 'Hired'
+        SELECTED = 'selected', 'Selected'
 
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='applications')
     candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='applications')
@@ -67,3 +68,17 @@ class Application(models.Model):
         return f"{self.candidate.user.email} -> {self.job.title}"
 
 
+
+class ApplicationLog(models.Model):
+
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='status_logs')
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    
+    old_status = models.CharField(max_length=30, choices=Application.ApplicationStatus.choices)
+    new_status = models.CharField(max_length=30, choices=Application.ApplicationStatus.choices)
+    notes = models.TextField(blank=True, help_text="Optional feedback from the employer.")
+    
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.application.candidate.user.email} -> {self.new_status}"

@@ -10,9 +10,14 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from apps.users.permissions import IsEmployer, IsCandidate
-from .models import Job, Application
-from .serializers import JobSerializer, ApplicationSerializer
-from .permissions import IsJobOwner
+from .models import Job, Application, ApplicationLog
+from .serializers import (
+    JobSerializer,
+    ApplicationSerializer,
+    ApplicationStatusUpdateSerializer,
+    EmployerApplicantSerializer,
+)
+from .permissions import IsJobOwner, IsEmployerForApplication
 from .filters import JobFilter
 from .pagination import JobCursorPagination
 
@@ -96,3 +101,72 @@ class CandidateApplicationHistoryAPIView(generics.ListAPIView):
             ).select_related('job', 'job__employer').order_by('-applied_at')
     
 
+class EmployerApplicationStatusAPIView(generics.UpdateAPIView):
+    queryset = Application.objects.all()
+    serializer_class = ApplicationStatusUpdateSerializer
+    permission_classes = [IsAuthenticated, IsEmployer, IsEmployerForApplication]
+
+    def perform_update(self, serializer):
+        application = serializer.instance
+        old_status = application.status
+        new_status = serializer.validated_data['status']
+        notes = serializer.validated_data.pop('notes', '')
+
+        # Update the application status
+        application = serializer.save()
+
+        # Create the immutable audit log entry
+        ApplicationLog.objects.create(
+            application=application,
+            updated_by=self.request.user,
+            old_status=old_status,
+            new_status=new_status,
+            notes=notes
+        )
+
+
+class EmployerApplicantListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated, IsEmployer]
+    serializer_class = EmployerApplicantSerializer
+
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['status', 'job__id']
+    search_fields = ['candidate__skills', 'candidate__user__email']
+
+    def get_queryset(self):
+        return Application.objects.filter(
+            job__employer=self.request.user.employer_profile
+            ).select_related(
+            'candidate', 'candidate__user', 'job'
+            ).order_by('-applied_at')
+
+
+class EmployerAnalyticsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsEmployer]
+
+    def get(self, request):
+        employer = request.user.employer_profile
+        total_active_jobs = Job.objects.filter(employer=employer, is_active=True).count()
+        employer_applications = Application.objects.filter(job__employer=employer)
+        total_applications = employer_applications.count()
+
+        shortlisted_count = employer_applications.filter(status=Application.ApplicationStatus.SHORTLISTED).count()
+        hired_count = employer_applications.filter(status=Application.ApplicationStatus.SELECTED).count()
+        rejected_count = employer_applications.filter(status=Application.ApplicationStatus.REJECTED).count()
+
+        shortlist_ratio = 0
+        if total_applications > 0:
+            shortlist_ratio = round((shortlisted_count/total_applications)*100, 2)
+
+        return Response({
+            "metrics": {
+                "active_jobs": total_active_jobs,
+                "total_applications": total_applications,
+                "pipeline": {
+                    "shortlisted": shortlisted_count,
+                    "hired": hired_count,
+                    "rejected": rejected_count
+                },
+                "shortlist_ratio_percentage": shortlist_ratio
+            }
+        })

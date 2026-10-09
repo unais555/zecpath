@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Job, Application
+from .models import Job, Application, ApplicationLog
+
 
 class JobSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,3 +23,44 @@ class ApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = ['id', 'job', 'job_title', 'company_name', 'resume_snapshot', 'status', 'status_display', 'applied_at']
+
+
+
+class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
+    notes = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
+    class Meta:
+        model = Application
+        fields = ['status', 'notes']
+
+    def validate_status(self, new_status):
+        current_status = self.instance.status
+        
+
+        allowed_transitions = {
+            'applied': ['shortlisted', 'rejected'],
+            'shortlisted': ['interview_scheduled', 'rejected'],
+            'interview_scheduled': ['selected', 'rejected'],
+            'selected': [],
+            'rejected': [], 
+        }
+
+        if new_status not in allowed_transitions.get(current_status, []):
+            raise serializers.ValidationError(
+                f"Invalid transition. Cannot move application from '{current_status}' to '{new_status}'."
+            )
+        
+        return new_status
+
+class EmployerApplicantSerializer(serializers.ModelSerializer):
+    candidate_email = serializers.EmailField(source='candidate.user.email', read_only=True)
+    candidate_skills = serializers.CharField(source='candidate.skills', read_only=True)
+    candidate_experience = serializers.IntegerField(source='candidate.experience', read_only=True)
+    job_title = serializers.CharField(source='job.title', read_only=True)
+
+    class Meta:
+        model = Application
+        fields = [
+            'id', 'job_title', 'candidate_email', 'candidate_skills', 
+            'candidate_experience', 'resume_snapshot', 'status', 'applied_at'
+        ]
