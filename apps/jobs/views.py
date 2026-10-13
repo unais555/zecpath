@@ -8,14 +8,17 @@ from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Q
 
 from apps.users.permissions import IsEmployer, IsCandidate
-from .models import Job, Application, ApplicationLog
+from .models import Job, Application, ApplicationLog, SavedJob
 from .serializers import (
     JobSerializer,
     ApplicationSerializer,
     ApplicationStatusUpdateSerializer,
     EmployerApplicantSerializer,
+    ApplicationTimelineSerializer,
+    SavedJobSerializer,
 )
 from .permissions import IsJobOwner, IsEmployerForApplication
 from .filters import JobFilter
@@ -170,3 +173,49 @@ class EmployerAnalyticsAPIView(APIView):
                 "shortlist_ratio_percentage": shortlist_ratio
             }
         })
+
+
+class CandidateSavedJobsAPIView(generics.ListCreateAPIView):
+    serializer_class = SavedJobSerializer
+    permission_classes = [IsAuthenticated, IsCandidate]
+
+    def get_queryset(self):
+        return SavedJob.objects.filter(
+            candidate=self.request.user.candidate_profile
+        ).select_related('job', 'job__employer').order_by('-saved_at')
+
+    def perform_create(self, serializer):
+        serializer.save(candidate=self.request.user.candidate_profile)
+
+
+class CandidateApplicationTimelineAPIView(generics.ListAPIView):
+    serializer_class = ApplicationTimelineSerializer
+    permission_classes = [IsAuthenticated, IsCandidate]
+
+    def get_queryset(self):
+        application_id = self.kwargs.get('app_id')
+        return ApplicationLog.objects.filter(
+            application__id=application_id,
+            application__candidate=self.request.user.candidate_profile
+        ).order_by('-timestamp')
+
+class CandidateJobRecommendationsAPIView(generics.ListAPIView):
+    serializer_class = JobSerializer
+    permission_classes = [IsAuthenticated, IsCandidate]
+
+    def get_queryset(self):
+        candidate = self.request.user.candidate_profile
+        candidate_skills = candidate.skills.split(',') if candidate.skills else []
+
+        if not candidate_skills:
+            return Job.objects.none()
+
+        skill_query = Q()
+        for skill in candidate_skills:
+            skill = skill.strip()
+            if skill:
+                skill_query |= Q(skills__icontains=skill)
+        return Job.objects.filter(
+            status=Job.JobStatus.OPEN,
+            is_active=True
+        ).filter(skill_query).select_related('employer').distinct().order_by('-created_at')[:10]

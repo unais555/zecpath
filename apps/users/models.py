@@ -3,7 +3,7 @@ import uuid
 import os
 from .validators import validate_resume_extentions, validate_resume_size
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -107,4 +107,16 @@ class CandidateProfile(models.Model):
 
     def __str__(self):
         return f"Candidate Profile for {self.user.email}"
+
+
+
+
+class AdminActionLog(models.Model):
+    admin = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='admin_actions')
+    action = models.CharField(max_length=255, help_text="What the admin did (e.g., 'Approved Employer', 'Deleted Spam Job')")
+    target_object = models.CharField(max_length=255, help_text="The affected entity (e.g., 'Company: TechCorp')")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.admin.email} - {self.action} at {self.timestamp}"
     

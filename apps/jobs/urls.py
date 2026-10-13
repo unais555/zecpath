@@ -7,7 +7,10 @@ from .views import (
     CandidateApplicationHistoryAPIView,
     EmployerApplicationStatusAPIView,
     EmployerAnalyticsAPIView,
-    EmployerApplicantListAPIView
+    EmployerApplicantListAPIView,
+    CandidateApplicationTimelineAPIView,
+    CandidateSavedJobsAPIView,
+    CandidateJobRecommendationsAPIView,
 )
 
 urlpatterns = [
@@ -19,4 +22,7 @@ urlpatterns = [
     path('employer/applications/<int:pk>/status/', EmployerApplicationStatusAPIView.as_view(), name='employer_update_status'),
     path('employer/applicants/', EmployerApplicantListAPIView.as_view(), name='employer_applicants'),
     path('employer/analytics/', EmployerAnalyticsAPIView.as_view(), name='employer_analytics'),
+    path('candidate/saved-jobs/', CandidateSavedJobsAPIView.as_view(), name='saved_jobs'),
+    path('candidate/applications/<int:app_id>/timeline/', CandidateApplicationTimelineAPIView.as_view(), name='application_timeline'),
+    path('candidate/recommendations/', CandidateJobRecommendationsAPIView.as_view(), name='job_recommendations'),
 ]

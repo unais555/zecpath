@@ -40,7 +40,7 @@ class Job(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title} at {self.employer.company_name}"
+        return f"{self.id} - {self.title} at {self.employer.company_name}"
 
 
 class Application(models.Model):
@@ -82,3 +82,16 @@ class ApplicationLog(models.Model):
 
     def __str__(self):
         return f"{self.application.candidate.user.email} -> {self.new_status}"
+
+
+class SavedJob(models.Model):
+    candidate = models.ForeignKey(CandidateProfile, on_delete=models.CASCADE, related_name='saved_jobs')
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['candidate', 'job'], name='unique_saved_jobs')
+        ]
+    def __str__(self):
+        return f"{self.candidate.user.email} saved {self.job.title}"

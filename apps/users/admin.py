@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
-from .models import User, CandidateProfile, EmployerProfile
+from .models import User, CandidateProfile, EmployerProfile, AdminActionLog
 from .forms import UserRegistrationForm
 
 
@@ -61,3 +61,5 @@ class CandidateProfileAdmin(admin.ModelAdmin):
     list_display = ( 'id','user', 'skills',)
     search_fields = ('user__email',)
    
+
+admin.site.register(AdminActionLog)
