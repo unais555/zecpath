@@ -111,6 +111,8 @@ class CandidateProfile(models.Model):
     )
     resume_parsed_at = models.DateTimeField(blank=True, null=True)
 
+    structured_resume_data = models.JSONField(blank=True, null=True)
+
 
     def __str__(self):
         return f"Candidate Profile for {self.user.email}"

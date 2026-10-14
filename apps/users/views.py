@@ -19,6 +19,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .services import deactivate_user_account
 from .resume_parser import process_resume_file
+from .nlp_engine import build_resume_json_schema
 
 
 class SignupAPIView(generics.CreateAPIView):
@@ -94,35 +95,41 @@ class ResumeParseAndUploadAPIView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        print("FILES RECEIVED:", request.FILES)
-        print("DATA RECEIVED:", request.data)
         serializer = ResumeUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # uploaded_file = serializer.data["resume"]
         uploaded_file = request.FILES.get('resume')
 
-        parsed_data = process_resume_file(uploaded_file)
+        if not uploaded_file:
+            return Response({"error": "No resume file was found in the request."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            parsed_data = process_resume_file(uploaded_file)
+            cleaned_text = parsed_data["cleaned_text"]
+            structured_data = build_resume_json_schema(cleaned_text)
 
-        profile = request.user.candidate_profile
-        profile.resume = uploaded_file
-        profile.parsed_resume_text = parsed_data["cleaned_text"]
-        profile.resume_parsed_at = timezone.now()
-        profile.save(update_fields=['resume', 'parsed_resume_text', 'resume_parsed_at'])
+            profile = request.user.candidate_profile
+            profile.resume = uploaded_file
+            profile.parsed_resume_text = cleaned_text
+            profile.resume_parsed_at = timezone.now()
+            profile.save(update_fields=['resume', 'parsed_resume_text', 'structured_resume_data', 'resume_parsed_at'])
 
-        
-        return Response({
-            "success": True,
-            "message": "Resume uploaded and parsed successfully.",
-            "metadata": {
-                "filename": parsed_data["filename"],
-                "format": parsed_data["extension"],
-                "word_count": parsed_data["word_count"],
-                "character_count": parsed_data["character_count"],
-                "parsed_at": profile.resume_parsed_at
-            },
-            "cleaned_text": parsed_data["cleaned_text"]
-        }, status=status.HTTP_200_OK)
-        # return Response({"success":True})
+            
+            return Response({
+                "success": True,
+                "message": "Resume uploaded and parsed successfully.",
+                "metadata": {
+                    "filename": parsed_data["filename"],
+                    "format": parsed_data["extension"],
+                    "word_count": parsed_data["word_count"],
+                    "character_count": parsed_data["character_count"],
+                    "parsed_at": profile.resume_parsed_at
+                },
+                "structured_data": structured_data,
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 

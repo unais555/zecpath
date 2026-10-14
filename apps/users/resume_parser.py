@@ -38,6 +38,7 @@ def extract_text_from_docx(file_obj):
 def clean_and_normalize_text(raw_text: str) -> str:
     if not raw_text:
         return ""
+    
     # 1. Remove null bytes and non-printable control characters
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', raw_text)
     # 2. Replace fancy Unicode bullets/symbols with standard hyphens
@@ -52,6 +53,7 @@ def clean_and_normalize_text(raw_text: str) -> str:
     lines = [line.strip() for line in text.split('\n')]
     
     return "\n".join(lines).strip()
+
 
 def process_resume_file(uploaded_file):
     ext = os.path.splitext(uploaded_file.name)[1].lower()
