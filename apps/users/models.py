@@ -104,6 +104,13 @@ class CandidateProfile(models.Model):
         blank=True, 
         help_text="Expected annual salary"
     )
+    parsed_resume_text = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Automatically extracted and normalized text from the candidate's resume."
+    )
+    resume_parsed_at = models.DateTimeField(blank=True, null=True)
+
 
     def __str__(self):
         return f"Candidate Profile for {self.user.email}"

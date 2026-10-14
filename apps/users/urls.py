@@ -8,6 +8,7 @@ from .views import (
     CandidateProfileDetailAPIView,
     EmployerProfileDetailAPIView,
     EmployerListAPIView,
+    ResumeParseAndUploadAPIView,
 )
 from .admin_views import (
     AdminPlatformStatsAPIView,
@@ -35,6 +36,7 @@ urlpatterns = [
     path('api/admin/users/<int:user_id>/block/', AdminModerateUserAPIView.as_view(), name="admin_block_user"),
     path('api/admin/jobs/<int:job_id>/remove/', AdminModerateJobAPIView.as_view(), name="admin_remove_job"),
     path('api/admin/audit-logs/', AdminAuditLogAPIView.as_view(), name='admin_audit_logs'),
+    path('candidate/resume/parse/', ResumeParseAndUploadAPIView.as_view(), name='resume_parse_upload'),
     
 
 

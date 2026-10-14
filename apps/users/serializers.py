@@ -1,7 +1,9 @@
+import os
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import CandidateProfile, EmployerProfile
 from .services import create_user_account
+
 
 User = get_user_model()
 
@@ -32,3 +34,20 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         model = EmployerProfile
         fields = ['id', 'company_name', 'domain', 'size', 'is_verified']
         read_only_fields = ['is_verified']
+
+class ResumeUploadSerializer(serializers.Serializer):
+    resume = serializers.FileField(required=True)
+
+    def validate_resume(self, file):
+        # 1. File Size Check (Max 5MB)
+        max_size = 5 * 1024 * 1024
+        if file.size > max_size:
+            raise serializers.ValidationError("Resume file size cannot exceed 5MB.")
+
+        # 2. Extension Check
+        ext = os.path.splitext(file.name)[1].lower()
+        if ext not in ['.pdf', '.docx']:
+            raise serializers.ValidationError("Unsupported file type. Please upload a .pdf or .docx file.")
+
+        # THIS IS THE CRITICAL LINE. IT MUST BE HERE AND IT MUST BE ALIGNED LIKE THIS.
+        return file
