@@ -105,12 +105,13 @@ class ResumeParseAndUploadAPIView(APIView):
         try:
             parsed_data = process_resume_file(uploaded_file)
             cleaned_text = parsed_data["cleaned_text"]
-            structured_data = build_resume_json_schema(cleaned_text)
+            structured_resume_data = build_resume_json_schema(cleaned_text)
 
             profile = request.user.candidate_profile
             profile.resume = uploaded_file
             profile.parsed_resume_text = cleaned_text
             profile.resume_parsed_at = timezone.now()
+            profile.structured_resume_data = structured_resume_data
             profile.save(update_fields=['resume', 'parsed_resume_text', 'structured_resume_data', 'resume_parsed_at'])
 
             
@@ -124,7 +125,7 @@ class ResumeParseAndUploadAPIView(APIView):
                     "character_count": parsed_data["character_count"],
                     "parsed_at": profile.resume_parsed_at
                 },
-                "structured_data": structured_data,
+                "structured_data": structured_resume_data,
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

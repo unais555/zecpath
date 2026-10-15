@@ -22,7 +22,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Application
-        fields = ['id', 'job', 'job_title', 'company_name', 'resume_snapshot', 'status', 'status_display', 'applied_at']
+        fields = ['id', 'job', 'job_title', 'company_name', 'resume_snapshot', 'status', 'status_display', 'applied_at',]
 
 
 

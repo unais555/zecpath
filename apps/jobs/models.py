@@ -59,6 +59,8 @@ class Application(models.Model):
     applied_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    ats_score = models.IntegerField(default=0)
+
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['job', 'candidate'], name='unique_job_application')

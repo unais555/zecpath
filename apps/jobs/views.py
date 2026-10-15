@@ -23,6 +23,7 @@ from .serializers import (
 from .permissions import IsJobOwner, IsEmployerForApplication
 from .filters import JobFilter
 from .pagination import JobCursorPagination
+from .matching_engine import generate_ats_suitability_score
 
 
 class EmployerJobListCreateAPIView(generics.ListCreateAPIView):
@@ -80,16 +81,20 @@ class ApplyJobAPIView(APIView):
         if not candidate.resume:
             return Response({"error": "You must upload a resume to your profile before applying."}, status=status.HTTP_400_BAD_REQUEST)
 
+        suitability_score = generate_ats_suitability_score(candidate, job)
+
         resume_url = request.build_absolute_uri(candidate.resume.url)
         application = Application.objects.create(
             job=job,
             candidate=candidate,
-            resume_snapshot=resume_url
+            resume_snapshot=resume_url,
+            ats_score=suitability_score
             )
 
         serializer = ApplicationSerializer(application)
         return Response({
             "message": "Application submitted successfully!",
+            "ats_score": suitability_score,
             "data": serializer.data
         }, status=status.HTTP_201_CREATED)
 
@@ -136,12 +141,31 @@ class EmployerApplicantListAPIView(generics.ListAPIView):
     filterset_fields = ['status', 'job__id']
     search_fields = ['candidate__skills', 'candidate__user__email']
 
-    def get_queryset(self):
-        return Application.objects.filter(
-            job__employer=self.request.user.employer_profile
-            ).select_related(
-            'candidate', 'candidate__user', 'job'
-            ).order_by('-applied_at')
+    def get(self, request, job_id):
+        # return Application.objects.filter(
+        #     job__employer=self.request.user.employer_profile
+        #     ).select_related(
+        #     'candidate', 'candidate__user', 'job'
+        #     ).order_by('-ats_score')
+
+        job = get_object_or_404(Job, id=job_id, employer=request.user.employer_profile)
+        applications = Application.objects.filter(job=job).select_related('candidate').order_by('-ats_score')
+
+        data = []
+        for app in applications:
+            data.append({
+                "application_id": app.id,
+                "candidate_name": f"{app.candidate.user.first_name} {app.candidate.user.last_name}",
+                "status": app.get_status_display(),
+                "suitability_percent": app.ats_score,
+                "applied_at": app.applied_at
+            })
+            
+        return Response({
+            "job_title": job.title,
+            "total_applicants": applications.count(),
+            "ranked_candidates": data
+        })
 
 
 class EmployerAnalyticsAPIView(APIView):
