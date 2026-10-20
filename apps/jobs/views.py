@@ -1,14 +1,13 @@
-from django.shortcuts import render
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics
+from django.shortcuts import render, get_object_or_404
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import AllowAny
-from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from rest_framework import status
 from django.db.models import Q
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from apps.users.permissions import IsEmployer, IsCandidate
 from .models import Job, Application, ApplicationLog, SavedJob
@@ -64,6 +63,10 @@ class PublicJobListAPIView(generics.ListAPIView):
             status=Job.JobStatus.OPEN, 
             is_active=True
         ).select_related('employer').order_by('-created_at')
+
+    @method_decorator(cache_page(900))
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
 
 class ApplyJobAPIView(APIView):
     permission_classes = [IsAuthenticated, IsCandidate]
@@ -149,8 +152,10 @@ class EmployerApplicantListAPIView(generics.ListAPIView):
         #     ).order_by('-ats_score')
 
         job = get_object_or_404(Job, id=job_id, employer=request.user.employer_profile)
-        applications = Application.objects.filter(job=job).select_related('candidate').order_by('-ats_score')
-
+        applications = Application.objects.select_related(
+            'candidate__user', # Gets the candidate and their underlying User model (first_name, email)
+            'job'
+        ).filter(job=job).order_by('-ats_score')
         data = []
         for app in applications:
             data.append({
@@ -243,3 +248,31 @@ class CandidateJobRecommendationsAPIView(generics.ListAPIView):
             status=Job.JobStatus.OPEN,
             is_active=True
         ).filter(skill_query).select_related('employer').distinct().order_by('-created_at')[:10]
+
+
+class EmployerApplicationOverrideAPIView(generics.UpdateAPIView):
+    queryset = Application.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        application = self.get_object()
+
+        if application.job.employer != request.user.employer_profile:
+            return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+        
+        new_status = request.data.get('status')
+        new_status_lower = new_status.lower()
+        statuses = Application.ApplicationStatus.values
+        print(statuses)
+        if new_status_lower not in statuses:
+            return Response({"error": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        application.status = new_status
+        application.is_manually_overridden = True
+        application.save(update_fields=['status', 'is_manually_overridden'])
+        
+        return Response({
+            "success": True,
+            "message": f"Application manually marked as {new_status}.",
+            "application_id": application.id
+        })

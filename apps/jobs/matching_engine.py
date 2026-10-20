@@ -38,14 +38,14 @@ def generate_ats_suitability_score(candidate_profile, job):
         if skill.strip()
         ] if hasattr(job, 'skills') and job.skills else []
     job_experience = job.experience if hasattr(job, 'experience') else 0
-    print(f"job_skills : {job_skills}, job_experience: {job_experience}")
-    print("cadidate_skill_type",type(candidate_skills))
-    print("job_skill_type",type(job_skills))
+    # print(f"job_skills : {job_skills}, job_experience: {job_experience}")
+    # print("cadidate_skill_type",type(candidate_skills))
+    # print("job_skill_type",type(job_skills))
 
     skills_score = calculate_skills_score(candidate_skills, job_skills)
     experience_score = calculate_experience_score(candidate_experience, job_experience)
-    print(f"skills_score : {skills_score}, experience_score : {experience_score}")
+    # print(f"skills_score : {skills_score}, experience_score : {experience_score}")
 
     weighted_score = (skills_score * 0.70) + (experience_score * 0.30)
-    print(f"weighted_score : {weighted_score}")
+    # print(f"weighted_score : {weighted_score}")
     return int(round(weighted_score))

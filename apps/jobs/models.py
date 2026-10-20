@@ -30,6 +30,10 @@ class Job(models.Model):
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    auto_shortlist_threshold = models.IntegerField(default=80, help_text="ATS score (0-100) required to automatically shortlist.")
+    auto_reject_threshold = models.IntegerField(default=40, help_text="ATS score (0-100) below which candidates are automatically rejected.")
+    is_automation_enabled = models.BooleanField(default=True)
     
     def clean(self):
         if self.min_salary and self.max_salary and self.min_salary > self.max_salary:
@@ -60,14 +64,21 @@ class Application(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     ats_score = models.IntegerField(default=0)
+    is_manually_overridden = models.BooleanField(default=False)
 
     class Meta:
+        indexes = [
+            # Speeds up finding applications for a specific job by status
+            models.Index(fields=['job', 'status']),
+            # Speeds up the employer dashboard ranking (-ats_score descending)
+            models.Index(fields=['-ats_score']), 
+        ]
         constraints = [
             models.UniqueConstraint(fields=['job', 'candidate'], name='unique_job_application')
         ]
 
     def __str__(self):
-        return f"{self.candidate.user.email} -> {self.job.title}"
+        return f"{self.id} - {self.candidate.user.email} -> {self.job.title}"
 
 
 
@@ -97,3 +108,22 @@ class SavedJob(models.Model):
         ]
     def __str__(self):
         return f"{self.candidate.user.email} saved {self.job.title}"
+
+
+
+class NotificationLog(models.Model):
+    EVENT_CHOICES = [
+        ("APPLIED", "Applicatin submitted"),
+        ("SHORTLISTED", "Candidate shortlisted"),
+        ('REJECTED', 'Candidate Rejected'),
+    ]
+
+    recipient = models.EmailField()
+    subject = models.CharField(max_length=255)
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES)
+    status = models.CharField(max_length=20, default='PENDING')
+    error_message = models.TextField(blank=True, null=True)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.event_type} - {self.recipient} - {self.status}"

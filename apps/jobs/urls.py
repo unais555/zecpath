@@ -11,6 +11,7 @@ from .views import (
     CandidateApplicationTimelineAPIView,
     CandidateSavedJobsAPIView,
     CandidateJobRecommendationsAPIView,
+    EmployerApplicationOverrideAPIView,
 )
 
 urlpatterns = [
@@ -25,4 +26,5 @@ urlpatterns = [
     path('candidate/saved-jobs/', CandidateSavedJobsAPIView.as_view(), name='saved_jobs'),
     path('candidate/applications/<int:app_id>/timeline/', CandidateApplicationTimelineAPIView.as_view(), name='application_timeline'),
     path('candidate/recommendations/', CandidateJobRecommendationsAPIView.as_view(), name='job_recommendations'),
+    path('applications/<int:pk>/override/', EmployerApplicationOverrideAPIView.as_view(), name='employer-application-override'),
 ]

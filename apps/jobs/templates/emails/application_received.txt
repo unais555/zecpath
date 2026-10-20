@@ -1,0 +1,2 @@
+Hello {{ candidate_name }},
+We have successfully received your application for the {{ job_title }} position!
