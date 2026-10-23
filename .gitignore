@@ -7,3 +7,4 @@ media/
 staticfiles/
 .vscode/
 Thumbs.db
+django_errors.log

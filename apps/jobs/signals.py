@@ -14,7 +14,7 @@ def trigger_application_notifications(sender, instance, created, **kwargs):
 
     if created:
         # send_async_email.delay(  => with redis
-        send_async_email(
+        send_async_email.delay(
             recipient_email=candidate_email,
             subject=f"Application Received: {job_title}",
             template_name="application_received",
@@ -26,7 +26,7 @@ def trigger_application_notifications(sender, instance, created, **kwargs):
 
     if instance.tracker.has_changed('status'):
         if instance.status == Application.ApplicationStatus.SHORTLISTED:
-            send_async_email(
+            send_async_email.delay(
                 recipient_email=candidate_email,
                 subject=f"Great news! You've been shortlisted for {job_title}",
                 template_name="application_shortlisted",
@@ -34,7 +34,7 @@ def trigger_application_notifications(sender, instance, created, **kwargs):
                 event_type='SHORTLISTED'
             )
         elif instance.status == Application.ApplicationStatus.REJECTED:
-            send_async_email(
+            send_async_email.delay(
                 recipient_email=candidate_email,
                 subject=f"Update regarding your application for {job_title}",
                 template_name="application_rejected",

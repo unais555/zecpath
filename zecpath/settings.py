@@ -14,6 +14,7 @@ from pathlib import Path
 import environ
 from datetime import timedelta
 import os
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,7 +35,7 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=[])
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-CELERY_TASK_ALWAYS_EAGER = True
+# CELERY_TASK_ALWAYS_EAGER = True
 
 # Application definition
 
@@ -57,6 +58,9 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.jobs',
     'apps.applications',
+
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -206,5 +210,24 @@ MEDIA_ROOT = BASE_DIR / "media"
 MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    },
+}
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata' 
+
+
+
+
+CELERY_BEAT_SCHEDULE = {
+    'send-daily-interview-reminders': {
+        'task': 'apps.jobs.tasks.send_async_email',
+        'schedule': crontab(hour=9, minute=0),
+        'args': (['dummy@test.com', 'Reminder', 'reminder_template', {}, 'REMINDER']),
     },
 }
