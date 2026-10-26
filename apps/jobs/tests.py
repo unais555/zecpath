@@ -5,6 +5,7 @@ from apps.users.models import CandidateProfile, EmployerProfile
 from .models import Job, Application
 from django.core.files.uploadedfile import SimpleUploadedFile
 
+
 User = get_user_model()
 
 class JobFlowIntegrationTests(APITestCase):
@@ -75,3 +76,4 @@ class JobFlowIntegrationTests(APITestCase):
             
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Application.objects.count(), 1)
+

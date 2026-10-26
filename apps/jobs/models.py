@@ -3,6 +3,7 @@ from apps.users.models import EmployerProfile
 from django.core.exceptions import ValidationError
 from apps.users.models import CandidateProfile
 from django.conf import settings
+from django.utils import timezone
 
 
 
@@ -127,3 +128,84 @@ class NotificationLog(models.Model):
 
     def __str__(self):
         return f"{self.event_type} - {self.recipient} - {self.status}"
+
+
+
+class AICallLog(models.Model):
+    class CallStatus(models.TextChoices):
+        QUEUED = 'QUEUED', 'Queued'
+        IN_PROGRESS = 'IN_PROGRESS', 'In Progress'
+        COMPLETED = 'COMPLETED', 'Completed'
+        FAILED = 'FAILED', 'Failed'
+        NO_ANSWER = 'NO_ANSWER', 'No Answer'
+
+    application = models.OneToOneField(Application, on_delete=models.CASCADE, related_name='ai_call')
+    status = models.CharField(max_length=20, choices=CallStatus.choices, default=CallStatus.QUEUED)
+    provider_call_sid = models.CharField(max_length=100, blank=True, null=True) # E.g., Twilio Call ID
+    scheduled_for = models.DateTimeField(default=timezone.now)
+    retry_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Call {self.id} - {self.application.candidate.user.email} - {self.status}"
+
+
+class AIInterviewSession(models.Model):
+    application = models.OneToOneField('Application', on_delete=models.CASCADE, related_name='interview_session')
+    call_log = models.OneToOneField('AICallLog', on_delete=models.SET_NULL, null=True, related_name='session')
+    
+    # Transcript Storage (Structured JSON)
+    full_transcript_raw = models.JSONField(default=list, blank=True, help_text="Raw structured JSON array of all conversation turns.")
+    
+    # Audit Logs: Who, When, Why
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        help_text="The user who manually triggered the call. Null if system auto-triggered."
+    )
+    trigger_reason = models.CharField(max_length=255, default="System Auto-Trigger: ATS Score >= 70")
+    
+    # Timestamps
+    started_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def get_duration_seconds(self):
+        if self.started_at and self.ended_at:
+            return (self.ended_at - self.started_at).total_seconds()
+        return 0
+
+    def __str__(self):
+        return f"Interview Session - {self.application.candidate.user.email}"
+
+
+class AIQuestion(models.Model):
+    """Tracks each individual question asked by the AI."""
+    session = models.ForeignKey(AIInterviewSession, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    order = models.PositiveIntegerField(help_text="The sequence number of the question.")
+    asked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Q{self.order}: {self.question_text[:50]}..."
+
+
+class AIAnswer(models.Model):
+    """Tracks the voice-to-text transcript output of the candidate's response."""
+    question = models.OneToOneField(AIQuestion, on_delete=models.CASCADE, related_name='answer')
+    answer_text = models.TextField(help_text="The Speech-to-Text (STT) output of the candidate's voice.")
+    
+    # AI Evaluation of the specific answer
+    score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    feedback = models.TextField(blank=True, null=True)
+    
+    answered_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Answer to Q{self.question.order}"
