@@ -173,6 +173,11 @@ class AIInterviewSession(models.Model):
     ended_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    #state managing
+    current_question_index = models.IntegerField(default=0)
+    is_completed = models.BooleanField(default=False)
+    awaiting_follow_up = models.BooleanField(default=False, help_text="True if the AI is currently asking a dynamic follow-up.")
+
     def get_duration_seconds(self):
         if self.started_at and self.ended_at:
             return (self.ended_at - self.started_at).total_seconds()
@@ -209,3 +214,26 @@ class AIAnswer(models.Model):
 
     def __str__(self):
         return f"Answer to Q{self.question.order}"
+
+
+
+class QuestionCategory(models.TextChoices):
+    INTRODUCTION = 'INTRO', 'Introduction'
+    EXPERIENCE = 'EXPERIENCE', 'Experience'
+    SKILLS = 'SKILLS', 'Technical Skills'
+    AVAILABILITY = 'AVAILABILITY', 'Availability'
+    SALARY = 'SALARY', 'Salary Expectations'
+
+class JobScreeningTemplate(models.Model):
+    """Configurable question templates attached to a specific job."""
+    job = models.ForeignKey('Job', on_delete=models.CASCADE, related_name='screening_templates')
+    category = models.CharField(max_length=20, choices=QuestionCategory.choices)
+    base_question = models.TextField(help_text="The core question to ask. The AI will adapt this dynamically.")
+    order = models.PositiveIntegerField(default=0)
+    requires_follow_up = models.BooleanField(default=True, help_text="Allow AI to ask a follow-up if answer is vague.")
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.job.title} - Q{self.order}: {self.category}"

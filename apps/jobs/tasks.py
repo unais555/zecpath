@@ -6,6 +6,7 @@ import time
 from django.utils import timezone
 from .models import Application, AICallLog
 from .eligibility import CallEligibilityEngine
+from .services.ai_voice_bridge import AIVoiceBridgeService, RateLimitError, AIVoiceAPIError
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_async_email(self, recipient_email, subject, template_name, context, event_type):
@@ -94,19 +95,29 @@ def process_ai_call_trigger(self, application_id):
 def execute_external_call(self, call_log_id):
     """This task actually pings Twilio/OpenAI."""
     call_log = AICallLog.objects.get(id=call_log_id)
+    candidate_phone = call_log.application.candidate.phone_number
     
     call_log.status = AICallLog.CallStatus.IN_PROGRESS
     call_log.save(update_fields=['status'])
-    
+
+    bridge = AIVoiceBridgeService()
+
     try:
-        print(f"Pinging Voice API for {call_log.application.candidate.user.email}...")
-        return "Call API Pinged"
+        provider_sid = bridge.trigger_outbound_call(
+            to_number=candidate_phone, 
+            call_log_id=call_log.id,
+            language='en-IN' 
+        )
+
+        call_log.provider_call_sid = provider_sid
+        call_log.save(update_fields=['provider_call_sid'])
+        return f"Call API Pinged successfully. SID: {provider_sid}"
         
-    except Exception as e:
+    except (AIVoiceAPIError, RateLimitError) as e:
         call_log.status = AICallLog.CallStatus.FAILED
         call_log.retry_count += 1
         call_log.save(update_fields=['status', 'retry_count'])
         
-        # Retry with exponential backoff if Voice API goes down
+        # Celery-level retry if the Service Bridge exhausted its internal retries
         raise self.retry(exc=e, countdown=2 ** self.request.retries * 60)
     
