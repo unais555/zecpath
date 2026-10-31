@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework import generics, status
+from rest_framework import generics, status, views
 from rest_framework.views import APIView
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -10,7 +10,17 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
 from apps.users.permissions import IsEmployer, IsCandidate
-from .models import Job, Application, ApplicationLog, SavedJob
+from .models import ( Job, 
+    Application, 
+    ApplicationLog, 
+    SavedJob, 
+    AIAnswer, 
+    AIQuestion, 
+    AICallLog, 
+    AIInterviewSession,
+    InterviewReminderLog,
+    InterviewSchedule,
+    ) 
 from .serializers import (
     JobSerializer,
     ApplicationSerializer,
@@ -23,6 +33,8 @@ from .permissions import IsJobOwner, IsEmployerForApplication
 from .filters import JobFilter
 from .pagination import JobCursorPagination
 from .matching_engine import generate_ats_suitability_score
+from .services.scoring_engine import AnswerScoringEngine
+from .tasks import send_async_email
 
 
 class EmployerJobListCreateAPIView(generics.ListCreateAPIView):
@@ -276,3 +288,126 @@ class EmployerApplicationOverrideAPIView(generics.UpdateAPIView):
             "message": f"Application manually marked as {new_status}.",
             "application_id": application.id
         })
+
+
+class SubmitAnswerAPIView(views.APIView):
+    """API to submit a candidate's answer and instantly generate a score."""
+    
+    def post(self, request, question_id):
+        question = get_object_or_404(AIQuestion, id=question_id)
+        
+        # 1. Store Raw Answer
+        answer_text = request.data.get('answer_text')
+        confidence = request.data.get('confidence_indicator', 1.0)
+        
+        if not answer_text:
+            return Response({"error": "answer_text is required"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        answer = AIAnswer.objects.create(
+            question=question,
+            answer_text=answer_text,
+            confidence_indicator=confidence
+        )
+        
+        # 2. Trigger Scoring Engine
+        scored_answer = AnswerScoringEngine.evaluate_and_score(answer)
+        
+        return Response({
+            "message": "Answer submitted and scored successfully.",
+            "final_score": scored_answer.final_score,
+            "feedback": scored_answer.feedback
+        }, status=status.HTTP_201_CREATED)
+
+
+class RetrieveInterviewResultsAPIView(views.APIView):
+    """API for the Employer to retrieve the total scores for an interview."""
+    
+    def get(self, request, session_id):
+        session = get_object_or_404(AIInterviewSession, id=session_id)
+        answers = AIAnswer.objects.filter(question__session=session)
+        
+        if not answers.exists():
+            return Response({"message": "No answers recorded yet."}, status=status.HTTP_200_OK)
+            
+        # Calculate overall interview average
+        total_score = sum(ans.final_score for ans in answers if ans.final_score)
+        average_score = round(total_score / answers.count(), 2)
+        
+        results = [
+            {
+                "question": ans.question.question_text,
+                "answer": ans.answer_text,
+                "score": ans.final_score,
+                "feedback": ans.feedback
+            } for ans in answers
+        ]
+        
+        return Response({
+            "session_id": session.id,
+            "overall_score": average_score,
+            "detailed_results": results
+        }, status=status.HTTP_200_OK)
+
+
+
+
+class InterviewReminderAPIView(views.APIView):
+    """API for viewing reminder history and manually triggering ad-hoc reminders."""
+    
+    def get(self, request, schedule_id):
+        """Fetch the history of reminders sent for a specific interview."""
+        schedule = get_object_or_404(InterviewSchedule, id=schedule_id)
+        
+        # Fetch all reminder logs for this schedule
+        reminders = schedule.reminders.all().values(
+            'reminder_type', 'status', 'sent_at', 'error_message'
+        )
+        
+        return Response({
+            "schedule_id": schedule.id,
+            "candidate": schedule.application.candidate.user.email,
+            "scheduled_time": schedule.slot.start_time,
+            "reminders_history": list(reminders)
+        }, status=status.HTTP_200_OK)
+
+    def post(self, request, schedule_id):
+        """Manually trigger an ad-hoc reminder to the candidate."""
+        schedule = get_object_or_404(InterviewSchedule, id=schedule_id)
+        
+        candidate_email = schedule.application.candidate.user.email
+        job_title = schedule.application.job.title
+        
+        context = {
+            'candidate_email': candidate_email,
+            'job_title': job_title,
+            'start_time': schedule.slot.start_time.strftime('%A, %B %d at %I:%M %p'),
+            'reminder_type': 'MANUAL'
+        }
+        
+        try:
+            # 1. Dispatch the Celery task instantly
+            send_async_email.delay(
+                recipient_email=candidate_email,
+                subject=f"Important Reminder: Interview for {job_title}",
+                template_name='interview_reminder',
+                context=context,
+                event_type='REMINDER_MANUAL'
+            )
+            
+            # 2. Log the manual action
+            InterviewReminderLog.objects.create(
+                schedule=schedule,
+                reminder_type=InterviewReminderLog.ReminderType.MANUAL,
+                status=InterviewReminderLog.Status.SENT
+            )
+            
+            return Response(
+                {"message": "Manual reminder queued successfully."}, 
+                status=status.HTTP_200_OK
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to trigger reminder: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

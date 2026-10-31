@@ -1,0 +1,17 @@
+Interview Reminder: {{ job_title }}
+
+Hello,
+
+This is an automated reminder that your AI-conducted interview for the {{ job_title }} position is coming up in {% if reminder_type == '24H' %}24 hours{% else %}1 hour{% endif %}.
+
+Scheduled Time: {{ start_time }}
+
+Please ensure you are in a quiet room with a stable internet connection and a working microphone. At the scheduled time, our AI system will call the phone number you provided during your application.
+
+If you need to reschedule or cancel, please log in to your candidate dashboard immediately.
+
+Best regards,
+The Zecpath AI Recruiting Team
+
+---
+This email was sent to {{ candidate_email }}. Please do not reply directly to this automated message.

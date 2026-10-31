@@ -205,12 +205,25 @@ class AIAnswer(models.Model):
     """Tracks the voice-to-text transcript output of the candidate's response."""
     question = models.OneToOneField(AIQuestion, on_delete=models.CASCADE, related_name='answer')
     answer_text = models.TextField(help_text="The Speech-to-Text (STT) output of the candidate's voice.")
-    
+    confidence_indicator = models.FloatField(default=1.0, help_text="STT confidence score (0.0 to 1.0)")
+
+    relevance_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    completeness_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
     # AI Evaluation of the specific answer
-    score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     feedback = models.TextField(blank=True, null=True)
     
     answered_at = models.DateTimeField(auto_now_add=True)
+
+    def calculate_normalized_score(self):
+        """Applies weight distribution: 40% Relevance, 60% Completeness."""
+        if self.relevance_score is not None and self.completeness_score is not None:
+            # Scale output to a 0-100 format
+            weighted_score = (float(self.relevance_score) * 0.4) + (float(self.completeness_score) * 0.6)
+            self.final_score = round(weighted_score, 2)
+            return self.final_score
+        return 0
 
     def __str__(self):
         return f"Answer to Q{self.question.order}"
@@ -237,3 +250,65 @@ class JobScreeningTemplate(models.Model):
 
     def __str__(self):
         return f"{self.job.title} - Q{self.order}: {self.category}"
+
+
+from django.db import models
+
+class AvailabilitySlot(models.Model):
+    """Time slots predefined by the employer or recruiter."""
+    employer = models.ForeignKey(EmployerProfile, on_delete=models.CASCADE, related_name='availability_slots')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    is_booked = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['start_time']
+
+    def __str__(self):
+        return f"{self.employer.company_name}: {self.start_time.strftime('%Y-%m-%d %H:%M')} - Booked: {self.is_booked}"
+
+
+class InterviewSchedule(models.Model):
+    """The actual booked interview attached to an application."""
+    class ScheduleStatus(models.TextChoices):
+        SCHEDULED = 'SCHEDULED', 'Scheduled'
+        RESCHEDULED = 'RESCHEDULED', 'Rescheduled'
+        COMPLETED = 'COMPLETED', 'Completed'
+        CANCELED = 'CANCELED', 'Canceled'
+
+    application = models.OneToOneField('Application', on_delete=models.CASCADE, related_name='interview_schedule')
+    slot = models.OneToOneField(AvailabilitySlot, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=ScheduleStatus.choices, default=ScheduleStatus.SCHEDULED)
+    
+    meeting_link = models.URLField(blank=True, null=True, help_text="Zoom/Meet link if applicable")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Interview for {self.application.candidate.user.email} at {self.slot.start_time}"
+
+
+class InterviewReminderLog(models.Model):
+    """Tracks automated reminders to prevent duplicate sends and log failures."""
+    class ReminderType(models.TextChoices):
+        TWENTY_FOUR_HOUR = '24H', '24 Hours Before'
+        ONE_HOUR = '1H', '1 Hour Before'
+        MANUAL = 'MANUAL', 'Manual Ad-Hoc'
+
+    class Status(models.TextChoices):
+        SENT = 'SENT', 'Sent Successfully'
+        FAILED = 'FAILED', 'Failed'
+
+    schedule = models.ForeignKey('InterviewSchedule', on_delete=models.CASCADE, related_name='reminders')
+    reminder_type = models.CharField(max_length=10, choices=ReminderType.choices)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.SENT)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    error_message = models.TextField(blank=True, null=True)
+
+    class Meta:
+        # Ensure a specific reminder type is only sent once per interview
+        unique_together = ('schedule', 'reminder_type')
+
+    def __str__(self):
+        return f"{self.reminder_type} Reminder for {self.schedule.id} - {self.status}"

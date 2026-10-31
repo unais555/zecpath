@@ -1,12 +1,18 @@
 from celery import shared_task
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from .models import NotificationLog
 import time
+import datetime
+from django.db import transaction
 from django.utils import timezone
+
+
 from .models import Application, AICallLog
 from .eligibility import CallEligibilityEngine
 from .services.ai_voice_bridge import AIVoiceBridgeService, RateLimitError, AIVoiceAPIError
+from .models import NotificationLog
+from .models import InterviewSchedule, InterviewReminderLog
+
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_async_email(self, recipient_email, subject, template_name, context, event_type):
@@ -120,4 +126,80 @@ def execute_external_call(self, call_log_id):
         
         # Celery-level retry if the Service Bridge exhausted its internal retries
         raise self.retry(exc=e, countdown=2 ** self.request.retries * 60)
+
+
+
+@shared_task
+def process_interview_reminders():
+    """Scans for upcoming interviews and triggers time-based reminders."""
+    now = timezone.localtime(timezone.now())
     
+    # Define our time windows (adding a 15-minute buffer to catch the cron cycle)
+    twenty_four_hours_from_now = now + datetime.timedelta(hours=24)
+    one_hour_from_now = now + datetime.timedelta(hours=1)
+    
+    # 1. Fetch 24-Hour Reminders
+    _trigger_reminders_for_window(
+        start_time_window_start=twenty_four_hours_from_now,
+        start_time_window_end=twenty_four_hours_from_now + datetime.timedelta(minutes=15),
+        reminder_type=InterviewReminderLog.ReminderType.TWENTY_FOUR_HOUR
+    )
+
+    # 2. Fetch 1-Hour Reminders
+    _trigger_reminders_for_window(
+        start_time_window_start=one_hour_from_now,
+        start_time_window_end=one_hour_from_now + datetime.timedelta(minutes=15),
+        reminder_type=InterviewReminderLog.ReminderType.ONE_HOUR
+    )
+
+def _trigger_reminders_for_window(start_time_window_start, start_time_window_end, reminder_type):
+    """Helper function to process a specific time window."""
+    
+    # Find active schedules within the time window that haven't received this reminder type yet
+    schedules = InterviewSchedule.objects.filter(
+        status=InterviewSchedule.ScheduleStatus.SCHEDULED,
+        slot__start_time__gte=start_time_window_start,
+        slot__start_time__lt=start_time_window_end
+    ).exclude(
+        reminders__reminder_type=reminder_type,
+        reminders__status=InterviewReminderLog.Status.SENT
+    ).select_related('application__candidate__user', 'application__job', 'slot')
+
+    for schedule in schedules:
+        try:
+            with transaction.atomic():
+                # 1. Log the reminder to prevent duplicates on the next cron cycle
+                InterviewReminderLog.objects.create(
+                    schedule=schedule,
+                    reminder_type=reminder_type,
+                    status=InterviewReminderLog.Status.SENT
+                )
+                
+                # 2. Dispatch the Email Task
+                candidate_email = schedule.application.candidate.user.email
+                job_title = schedule.application.job.title
+                
+                context = {
+                    'candidate_email': candidate_email,
+                    'job_title': job_title,
+                    'start_time': schedule.slot.start_time.strftime('%A, %B %d at %I:%M %p'),
+                    'reminder_type': reminder_type
+                }
+                
+                send_async_email.delay(
+                    recipient_email=candidate_email,
+                    subject=f"Reminder: Interview for {job_title} in {reminder_type}",
+                    template_name='interview_reminder', # Ensure you create this template
+                    context=context,
+                    event_type=f'REMINDER_{reminder_type}'
+                )
+                print(f"Triggered {reminder_type} reminder for Schedule {schedule.id}")
+                
+        except Exception as e:
+            # Fallback if the database log fails
+            InterviewReminderLog.objects.create(
+                schedule=schedule,
+                reminder_type=reminder_type,
+                status=InterviewReminderLog.Status.FAILED,
+                error_message=str(e)
+            )
