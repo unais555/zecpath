@@ -235,3 +235,74 @@ CELERY_BEAT_SCHEDULE = {
         'args': (['dummy@test.com', 'Reminder', 'reminder_template', {}, 'REMINDER']),
     },
 }
+
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1", # Using DB 1 so it doesn't clash with Celery on DB 0
+    }
+}
+
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {name} {process:d} {thread:d} - {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} - {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file_app': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'application.log'),
+            'formatter': 'verbose',
+        },
+        'file_error': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'error.log'),
+            'formatter': 'verbose',
+        },
+        'file_security': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOGS_DIR, 'security.log'),
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # Standard Django requests and errors
+        'django': {
+            'handlers': ['console', 'file_app', 'file_error'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        # Custom Zecpath AI Event Logger
+        'zecpath.ai': {
+            'handlers': ['console', 'file_app'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Custom Zecpath Security Logger
+        'zecpath.security': {
+            'handlers': ['console', 'file_security'],
+            'level': 'WARNING',
+            'propagate': False,
+        }
+    }
+}

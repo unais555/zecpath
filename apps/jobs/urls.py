@@ -15,6 +15,8 @@ from .views import (
     SubmitAnswerAPIView,
     RetrieveInterviewResultsAPIView,
     InterviewReminderAPIView,
+    CandidateReportAPIView,
+    JobAnalyticsAPIView,
 )
 
 urlpatterns = [
@@ -33,5 +35,7 @@ urlpatterns = [
     path('interviews/questions/<int:question_id>/submit-answer/', SubmitAnswerAPIView.as_view(), name='submit-answer'),
     path('interviews/<int:session_id>/results/', RetrieveInterviewResultsAPIView.as_view(), name='interview-results'),
     path('interviews/<int:schedule_id>/reminders/', InterviewReminderAPIView.as_view(), name='interview-reminders'),
+    path('applications/<int:application_id>/report/', CandidateReportAPIView.as_view(), name='candidate-report'),
+    path('jobs/<int:job_id>/analytics/', JobAnalyticsAPIView.as_view(), name='job-analytics'),
 
 ]

@@ -8,3 +8,10 @@ staticfiles/
 .vscode/
 Thumbs.db
 django_errors.log
+
+*.log
+logs/
+
+# Celery / Redis
+celerybeat-schedule
+celerybeat.pid

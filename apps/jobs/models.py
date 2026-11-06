@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils import timezone
 
 
+User = settings.AUTH_USER_MODEL
 
 class Job(models.Model):
     class JobType(models.TextChoices):
@@ -312,3 +313,38 @@ class InterviewReminderLog(models.Model):
 
     def __str__(self):
         return f"{self.reminder_type} Reminder for {self.schedule.id} - {self.status}"
+
+
+class CandidateReport(models.Model):
+    """Stores the final aggregated AI insights for a candidate's application."""
+    application = models.OneToOneField('Application', on_delete=models.CASCADE, related_name='report')
+    
+    # Aggregated Scores
+    overall_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    # LLM Generated Insights
+    summary = models.TextField(help_text="Executive summary of the candidate's performance.")
+    strengths = models.JSONField(default=list, help_text="Array of key strengths.")
+    risks = models.JSONField(default=list, help_text="Array of potential risks or weaknesses.")
+    
+    generated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"AI Report - {self.application.candidate.user.email}"
+
+
+class AuditLog(models.Model):
+    """Immutable record of critical user and system actions for compliance."""
+    user = models.ForeignKey(
+        User, # Adjust based on where your CustomUser lives
+        on_delete=models.SET_NULL, 
+        null=True, blank=True
+    )
+    action = models.CharField(max_length=255, help_text="e.g., 'GENERATED_AI_REPORT', 'FAILED_LOGIN'")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    target_object_id = models.CharField(max_length=50, null=True, blank=True)
+    details = models.JSONField(default=dict, help_text="Additional context like previous state or API responses.")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.action} by {self.user} at {self.timestamp}"

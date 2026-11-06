@@ -34,8 +34,14 @@ from .filters import JobFilter
 from .pagination import JobCursorPagination
 from .matching_engine import generate_ats_suitability_score
 from .services.scoring_engine import AnswerScoringEngine
+from .services.report_generator import CandidateReportService
 from .tasks import send_async_email
+from .services.analytics import AnalyticsService
+import logging
+from apps.jobs.models import AuditLog
 
+
+security_logger = logging.getLogger('zecpath.security')
 
 class EmployerJobListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = JobSerializer
@@ -411,3 +417,78 @@ class InterviewReminderAPIView(views.APIView):
                 {"error": f"Failed to trigger reminder: {str(e)}"}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+
+class CandidateReportAPIView(views.APIView):
+    """Generates and retrieves the AI Candidate Report for Employers."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, application_id):
+        application = get_object_or_404(Application, id=application_id)
+        
+        # 1. Strict Access Control: Only the Employer who posted the job can view it
+        if request.user.role != getattr(request.user.Role, 'EMPLOYER', 'EMPLOYER'):
+            return Response({"error": "Unauthorized. Employer access required."}, status=status.HTTP_403_FORBIDDEN)
+            
+        if application.job.employer.user != request.user:
+            return Response({"error": "Unauthorized. You do not own this job posting."}, status=status.HTTP_403_FORBIDDEN)
+            
+        try:
+            # 2. Trigger the Engine
+            report = CandidateReportService.generate_report(application_id)
+            
+            # 3. Return Structured Report Format (JSON)
+            return Response({
+                "application_id": application.id,
+                "candidate": application.candidate.user.email,
+                "job_title": application.job.title,
+                "metrics": {
+                    "ats_score": getattr(application, 'ats_score', 0),
+                    "ai_interview_score": round((float(report.overall_score) - (float(getattr(application, 'ats_score', 0)) * 0.3)) / 0.7, 2) if report.overall_score else 0,
+                    "overall_combined_score": report.overall_score
+                },
+                "insights": {
+                    "summary": report.summary,
+                    "strengths": report.strengths,
+                    "risks": report.risks
+                },
+                "generated_at": report.generated_at
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class JobAnalyticsAPIView(APIView):
+    """Provides hiring funnel metrics and conversion rates for a specific job."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, job_id):
+        # Access Control: Only Employers
+        if request.user.role != getattr(request.user.Role, 'EMPLOYER', 'EMPLOYER'):
+            # 1. Write to security.log file
+            security_logger.warning(
+                f"Unauthorized access attempt by {request.user.email} (Role: {request.user.role}) on Analytics for Job {job_id}"
+            )
+            # 2. Save immutable record to DB Audit Trail
+            AuditLog.objects.create(
+                user=request.user,
+                action='UNAUTHORIZED_ANALYTICS_ACCESS_ATTEMPT',
+                target_object_id=str(job_id),
+                ip_address=request.META.get('REMOTE_ADDR')
+            )
+            return Response({"error": "Only employers can view analytics."}, status=status.HTTP_403_FORBIDDEN)
+            
+        # Verify the employer actually owns this job before showing data
+        from .models import Job
+        if not Job.objects.filter(id=job_id, employer__user=request.user).exists():
+             return Response({"error": "Job not found or unauthorized."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            data = AnalyticsService.get_job_funnel_metrics(job_id, request.user.id)
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
