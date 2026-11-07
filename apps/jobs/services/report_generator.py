@@ -56,21 +56,21 @@ class CandidateReportService:
             - "risks": An array of 1-2 potential risks, weaknesses, or areas for concern (strings).
             """
             
-            response = openai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "system", "content": prompt}],
-                response_format={"type": "json_object"},
-                temperature=0.3
-            )
+            # response = openai.chat.completions.create(
+            #     model="gpt-4o-mini",
+            #     messages=[{"role": "system", "content": prompt}],
+            #     response_format={"type": "json_object"},
+            #     temperature=0.3
+            # )
             
-            insights = json.loads(response.choices[0].message.content)
+            # insights = json.loads(response.choices[0].message.content)
 
             # Mock data
-            # insights = {
-            #     "summary": "[MOCK DATA] The candidate demonstrated excellent knowledge of backend systems but hit an OpenAI billing limit during the interview.",
-            #     "strengths": ["Resilience in debugging", "Strong Django architecture skills", "API Integration"],
-            #     "risks": ["Needs to top up OpenAI API credits"]
-            # }
+            insights = {
+                "summary": "[MOCK DATA] The candidate demonstrated excellent knowledge of backend systems but hit an OpenAI billing limit during the interview.",
+                "strengths": ["Resilience in debugging", "Strong Django architecture skills", "API Integration"],
+                "risks": ["Needs to top up OpenAI API credits"]
+            }
             
             # 5. Save and Return the Report
             report = CandidateReport.objects.create(

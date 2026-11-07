@@ -143,6 +143,16 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+            'rest_framework.throttling.AnonRateThrottle',
+            'rest_framework.throttling.UserRateThrottle',
+        ],
+        'DEFAULT_THROTTLE_RATES': {
+            'anon': '20/minute',      # Unauthenticated users (e.g., login attempts)
+            'user': '100/minute',     # Standard authenticated users
+            'ai_report': '10/day',    # Custom strict throttle for OpenAI endpoints
+            'login': '5/minute',
+        }
 }
 
 SIMPLE_JWT = {

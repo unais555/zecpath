@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
+from apps.users.views import ThrottledLoginView
 from .views import (
     SignupAPIView,
     LogoutAPIView, 
@@ -22,7 +23,7 @@ from .admin_views import (
 urlpatterns = [
     path('auth/signup/', SignupAPIView.as_view(), name='signup'),
     path('auth/logout/', LogoutAPIView.as_view(), name='logout'),
-    path('auth/login/', TokenObtainPairView.as_view(), name='login'),
+    path('auth/login/', ThrottledLoginView.as_view(), name='login'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     path('dashboard/employer/', EmployerDashboardAPIView.as_view(), name='employer_dashboard'),

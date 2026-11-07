@@ -4,6 +4,7 @@ import os
 from .validators import validate_resume_extentions, validate_resume_size
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.conf import settings
+from django_cryptography.fields import encrypt
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -41,7 +42,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=20, choices=Role.choices)
-    phone = models.CharField(max_length=15, blank=True, null=True)
+    phone = encrypt(models.CharField(max_length=15, blank=True, null=True))
     is_verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

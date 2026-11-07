@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from rest_framework.throttling import UserRateThrottle
 
 from apps.users.permissions import IsEmployer, IsCandidate
 from .models import ( Job, 
@@ -418,12 +419,16 @@ class InterviewReminderAPIView(views.APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+class AIReportThrottle(UserRateThrottle):
+    scope = 'ai_report'
 
+    
 
 class CandidateReportAPIView(views.APIView):
     """Generates and retrieves the AI Candidate Report for Employers."""
     permission_classes = [IsAuthenticated]
-    
+    throttle_classes = [AIReportThrottle]
+
     def get(self, request, application_id):
         application = get_object_or_404(Application, id=application_id)
         
@@ -464,7 +469,7 @@ class CandidateReportAPIView(views.APIView):
 
 class JobAnalyticsAPIView(APIView):
     """Provides hiring funnel metrics and conversion rates for a specific job."""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsEmployer]
 
     def get(self, request, job_id):
         # Access Control: Only Employers

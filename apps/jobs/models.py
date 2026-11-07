@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from apps.users.models import CandidateProfile
 from django.conf import settings
 from django.utils import timezone
+from django_cryptography.fields import encrypt
 
 
 User = settings.AUTH_USER_MODEL
@@ -205,7 +206,7 @@ class AIQuestion(models.Model):
 class AIAnswer(models.Model):
     """Tracks the voice-to-text transcript output of the candidate's response."""
     question = models.OneToOneField(AIQuestion, on_delete=models.CASCADE, related_name='answer')
-    answer_text = models.TextField(help_text="The Speech-to-Text (STT) output of the candidate's voice.")
+    answer_text = encrypt(models.TextField(help_text="The Speech-to-Text (STT) output of the candidate's voice."))
     confidence_indicator = models.FloatField(default=1.0, help_text="STT confidence score (0.0 to 1.0)")
 
     relevance_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)

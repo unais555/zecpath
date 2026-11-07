@@ -6,6 +6,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import ScopedRateThrottle
 
 from .serializers import (
     UserRegistrationSerializers, 
@@ -25,6 +28,14 @@ from .nlp_engine import build_resume_json_schema
 class SignupAPIView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializers
     permission_classes = [AllowAny]
+
+
+
+# We inherit from the predefined view to safely customize it
+class ThrottledLoginView(TokenObtainPairView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
+
 
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
