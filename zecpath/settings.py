@@ -39,7 +39,7 @@ TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER')
 OPENAI_API_KEY = env('OPENAI_API_KEY')
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_ALWAYS_EAGER = False
 
 # Application definition
 
@@ -143,16 +143,16 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
     ),
-    'DEFAULT_THROTTLE_CLASSES': [
-            'rest_framework.throttling.AnonRateThrottle',
-            'rest_framework.throttling.UserRateThrottle',
-        ],
-        'DEFAULT_THROTTLE_RATES': {
-            'anon': '20/minute',      # Unauthenticated users (e.g., login attempts)
-            'user': '100/minute',     # Standard authenticated users
-            'ai_report': '10/day',    # Custom strict throttle for OpenAI endpoints
-            'login': '5/minute',
-        }
+    # 'DEFAULT_THROTTLE_CLASSES': [
+    #         'rest_framework.throttling.AnonRateThrottle',
+    #         'rest_framework.throttling.UserRateThrottle',
+    #     ],
+    #     'DEFAULT_THROTTLE_RATES': {
+    #         'anon': '20/minute',      # Unauthenticated users (e.g., login attempts)
+    #         'user': '100/minute',     # Standard authenticated users
+    #         'ai_report': '10/day',    # Custom strict throttle for OpenAI endpoints
+    #         'login': '5/minute',
+    #     }
 }
 
 SIMPLE_JWT = {

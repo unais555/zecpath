@@ -37,6 +37,7 @@ class ThrottledLoginView(TokenObtainPairView):
     throttle_scope = 'login'
 
 
+
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 

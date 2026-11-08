@@ -428,20 +428,21 @@ class CandidateReportAPIView(views.APIView):
     """Generates and retrieves the AI Candidate Report for Employers."""
     permission_classes = [IsAuthenticated]
     throttle_classes = [AIReportThrottle]
+    
 
     def get(self, request, application_id):
         application = get_object_or_404(Application, id=application_id)
         
         # 1. Strict Access Control: Only the Employer who posted the job can view it
-        if request.user.role != getattr(request.user.Role, 'EMPLOYER', 'EMPLOYER'):
-            return Response({"error": "Unauthorized. Employer access required."}, status=status.HTTP_403_FORBIDDEN)
+        # if request.user.role != getattr(request.user.Role, 'EMPLOYER', 'EMPLOYER'):
+        #     return Response({"error": "Unauthorized. Employer access required."}, status=status.HTTP_403_FORBIDDEN)
             
         if application.job.employer.user != request.user:
             return Response({"error": "Unauthorized. You do not own this job posting."}, status=status.HTTP_403_FORBIDDEN)
             
         try:
             # 2. Trigger the Engine
-            report = CandidateReportService.generate_report(application_id)
+            report = CandidateReportService.generate_report(application_id, request.user)
             
             # 3. Return Structured Report Format (JSON)
             return Response({
