@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.jobs',
     'apps.applications',
+    'apps.payments',
 
     'django_celery_results',
     'django_celery_beat',
@@ -76,6 +77,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.payments.middleware.SubscriptionEnforcementMiddleware',
 ]
 
 ROOT_URLCONF = 'zecpath.urls'
@@ -316,3 +318,7 @@ LOGGING = {
         }
     }
 }
+
+
+RAZORPAY_KEY_ID = env('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET')

@@ -23,6 +23,7 @@ urlpatterns = [
     path('silk/', include('silk.urls', namespace='silk')),
     path('', include('apps.users.urls')),
     path('', include('apps.jobs.urls')),
+    path('payments/', include('apps.payments.urls')),
 ]
 
 if settings.DEBUG:

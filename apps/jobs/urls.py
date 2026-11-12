@@ -17,6 +17,7 @@ from .views import (
     InterviewReminderAPIView,
     CandidateReportAPIView,
     JobAnalyticsAPIView,
+    PremiumAnalyticsAPIView,
 )
 
 urlpatterns = [
@@ -37,5 +38,6 @@ urlpatterns = [
     path('interviews/<int:schedule_id>/reminders/', InterviewReminderAPIView.as_view(), name='interview-reminders'),
     path('applications/<int:application_id>/report/', CandidateReportAPIView.as_view(), name='candidate-report'),
     path('jobs/<int:job_id>/analytics/', JobAnalyticsAPIView.as_view(), name='job-analytics'),
+    path('employer/analytics/premium/', PremiumAnalyticsAPIView.as_view(), name='premium-analytics'),
 
 ]

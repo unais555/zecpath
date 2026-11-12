@@ -9,6 +9,9 @@ from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from rest_framework.throttling import UserRateThrottle
+from django.db.models import Avg, Count, Q, F, ExpressionWrapper, fields
+from apps.payments.throttles import PremiumTierThrottle
+
 
 from apps.users.permissions import IsEmployer, IsCandidate
 from .models import ( Job, 
@@ -40,13 +43,14 @@ from .tasks import send_async_email
 from .services.analytics import AnalyticsService
 import logging
 from apps.jobs.models import AuditLog
+from apps.payments.permissions import CanPostJob
 
 
 security_logger = logging.getLogger('zecpath.security')
 
 class EmployerJobListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = JobSerializer
-    permission_classes = [IsAuthenticated, IsEmployer]
+    permission_classes = [IsAuthenticated, IsEmployer, CanPostJob]
 
     def get_queryset(self):
         return Job.objects.filter(employer=self.request.user.employer_profile).order_by('-created_at')
@@ -498,3 +502,70 @@ class JobAnalyticsAPIView(APIView):
             return Response(data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class PremiumAnalyticsAPIView(views.APIView):
+    """Generates hiring efficiency metrics and candidate success predictions."""
+    
+    # 1. Secure API Access & Role Validation
+    permission_classes = [IsAuthenticated, IsEmployer]
+    
+    # 2. Prevent Misuse via dynamic throttling
+    throttle_classes = [PremiumTierThrottle]
+
+    def get(self, request):
+        employer = request.user.employer
+        
+        # --- A. Hiring Efficiency Metrics ---
+        # Calculate how many applicants were processed vs rejected/hired
+        pipeline_stats = employer.jobs.aggregate(
+            total_jobs=Count('id'),
+            total_candidates=Count('applications'),
+            ai_screened=Count('applications', filter=Q(applications__report__isnull=False)),
+            hired=Count('applications', filter=Q(applications__status='HIRED'))
+        )
+        
+        # Avoid division by zero
+        conversion_rate = 0
+        if pipeline_stats['total_candidates'] > 0:
+            conversion_rate = (pipeline_stats['hired'] / pipeline_stats['total_candidates']) * 100
+
+        # --- B. AI Candidate Ranking Reports ---
+        # Get the top 5 highest scored candidates across all active jobs
+        top_candidates = Application.objects.filter(
+            job__employer=employer, 
+            report__isnull=False
+        ).annotate(
+            ai_score=F('report__overall_score')
+        ).order_by('-ai_score')[:5]
+
+        ranked_list = [{
+            "candidate_name": app.candidate.user.get_full_name(),
+            "job_title": app.job.title,
+            "ai_score": app.ai_score,
+            "status": app.status,
+            "strengths": app.report.strengths
+        } for app in top_candidates]
+
+        # --- C. Candidate Success Predictions ---
+        # Average AI score required to reach the 'HIRED' status historically
+        success_baseline = Application.objects.filter(
+            job__employer=employer, 
+            status='HIRED',
+            report__isnull=False
+        ).aggregate(avg_score=Avg('report__overall_score'))['avg_score'] or 0
+
+        return Response({
+            "efficiency_metrics": {
+                "total_jobs_posted": pipeline_stats['total_jobs'],
+                "total_candidates_sourced": pipeline_stats['total_candidates'],
+                "ai_screened_count": pipeline_stats['ai_screened'],
+                "hire_conversion_rate": round(conversion_rate, 2)
+            },
+            "predictive_insights": {
+                "historical_success_baseline": round(success_baseline, 2),
+                "insight": f"Candidates scoring above {round(success_baseline, 1)} have the highest statistical probability of receiving an offer."
+            },
+            "top_ranked_candidates": ranked_list
+        }, status=status.HTTP_200_OK)
