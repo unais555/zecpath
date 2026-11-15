@@ -5,6 +5,11 @@ from .views import (
     razorpay_webhook,
     SubscriptionStatusAPIView,
 )
+from .admin_views import (
+    AdminRevenueReportAPIView,
+    AdminTransactionListAPIView,
+    AdminRefundTransactionAPIView
+)
 
 urlpatterns = [
     path('order/create/', CreatePaymentOrderAPIView.as_view(), name='create-payment-order'),
@@ -13,4 +18,8 @@ urlpatterns = [
     
     # Server-to-Server Webhook (No Authentication required, verified via signature)
     path('webhook/razorpay/', razorpay_webhook, name='razorpay-webhook'),
+
+    path('admin/revenue/', AdminRevenueReportAPIView.as_view(), name='admin-revenue-report'),
+    path('admin/transactions/', AdminTransactionListAPIView.as_view(), name='admin-transactions'),
+    path('admin/transactions/<int:transaction_id>/refund/', AdminRefundTransactionAPIView.as_view(), name='admin-refund'),
 ]

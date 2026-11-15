@@ -45,7 +45,7 @@ class PaymentTransaction(models.Model):
     amount = models.DecimalField(max_digits=8, decimal_places=2)
     currency = models.CharField(max_length=3, default='USD')
     status = models.CharField(max_length=20, choices=[
-        ('SUCCESS', 'Success'), ('FAILED', 'Failed'), ('PENDING', 'Pending')
+        ('SUCCESS', 'Success'), ('FAILED', 'Failed'), ('PENDING', 'Pending'), ('REFUNDED', 'Refunded')
     ])
     gateway_transaction_id = models.CharField(max_length=100, unique=True)
     error_message = models.TextField(blank=True, null=True)
