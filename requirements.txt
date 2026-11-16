@@ -106,7 +106,6 @@ python-engineio==4.15.1
 python-slugify==8.0.4
 python-socketio==5.18.1
 pytz==2025.1
-pywin32==312
 PyYAML==6.0.3
 pyzmq==27.3.0
 razorpay==2.0.1
