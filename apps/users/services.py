@@ -5,13 +5,13 @@ User = get_user_model()
 
 def create_user_account(email: str, password:str, role: str, phone:str =""):
     with transaction.atomic():
-        User.objects.create_user(
+        user = User.objects.create_user(
             email=email,
             password=password,
             role=role,
             phone=phone
         )
-    return User
+    return user
 
 def deactivate_user_account(user):
     user.is_active = False
