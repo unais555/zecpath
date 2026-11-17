@@ -34,3 +34,6 @@ eventlet==0.41.3
 # --- Cloud Server & Database ---
 gunicorn==21.2.0
 psycopg2-binary==2.9.11
+
+django-redis
+redis
