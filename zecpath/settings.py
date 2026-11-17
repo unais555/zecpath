@@ -15,6 +15,8 @@ import environ
 from datetime import timedelta
 import os
 from celery.schedules import crontab
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -74,6 +76,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'silk.middleware.SilkyMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -232,8 +235,9 @@ MAILERS = {
     },
 }
 
+REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/1")
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
@@ -253,9 +257,12 @@ CELERY_BEAT_SCHEDULE = {
 
 
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1", # Using DB 1 so it doesn't clash with Celery on DB 0
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache', # or 'django.core.cache.backends.redis.RedisCache' depending on what you use
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }
 
