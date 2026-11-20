@@ -116,6 +116,8 @@ class ResumeParseAndUploadAPIView(APIView):
             return Response({"error": "No resume file was found in the request."}, status=status.HTTP_400_BAD_REQUEST)
         try:
             parsed_data = process_resume_file(uploaded_file)
+            uploaded_file.seek(0)  # Rewind file pointer so S3 doesn't upload an empty 0-byte file
+
             cleaned_text = parsed_data["cleaned_text"]
             structured_resume_data = build_resume_json_schema(cleaned_text)
 
@@ -126,10 +128,10 @@ class ResumeParseAndUploadAPIView(APIView):
             profile.structured_resume_data = structured_resume_data
             profile.save(update_fields=['resume', 'parsed_resume_text', 'structured_resume_data', 'resume_parsed_at'])
 
-            
             return Response({
                 "success": True,
                 "message": "Resume uploaded and parsed successfully.",
+                "resume_url": profile.resume.url,  # Temporary signed cloud URL
                 "metadata": {
                     "filename": parsed_data["filename"],
                     "format": parsed_data["extension"],

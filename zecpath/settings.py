@@ -46,6 +46,35 @@ RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET')
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 CELERY_TASK_ALWAYS_EAGER = False
 
+
+
+# --- Cloud Storage & CDN (Supabase S3-Compatible) ---
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="resumes")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="ap-south-1")
+AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL")
+
+# Supabase S3 Compatibility & Security Controls
+AWS_S3_ADDRESSING_STYLE = "path"          # Required for Supabase S3 endpoints
+AWS_S3_SIGNATURE_VERSION = "s3v4"         # Required for temporary signed URLs
+AWS_DEFAULT_ACL = None                    # Enforces private bucket policy
+AWS_S3_FILE_OVERWRITE = False             # Prevents overwriting files with the same name
+AWS_QUERYSTRING_AUTH = True               # Generates temporary signed access URLs
+AWS_QUERYSTRING_EXPIRE = 300              # Signed URLs expire after 300 seconds (5 mins)
+
+# --- Django 6.0 Storage Backends ---
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+
+
 # Application definition
 
 INSTALLED_APPS = [
