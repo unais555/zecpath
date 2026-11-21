@@ -20,6 +20,8 @@ class Job(models.Model):
         OPEN = "open", "Open"
         CLOSED = "closed", "Closed"
 
+    
+
     employer = models.ForeignKey(EmployerProfile, on_delete=models.CASCADE, related_name="jobs")
     title = models.CharField(max_length=255, db_index=True)
     description = models.TextField()
@@ -46,6 +48,12 @@ class Job(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["is_active", "-created_at"], name="idx_job_active_created"),
+            models.Index(fields=["location", "job_type"], name="idx_job_loc_type"),
+        ]
+
     def __str__(self):
         return f"{self.id} - {self.title} at {self.employer.company_name}"
 
@@ -71,10 +79,8 @@ class Application(models.Model):
 
     class Meta:
         indexes = [
-            # Speeds up finding applications for a specific job by status
-            models.Index(fields=['job', 'status']),
-            # Speeds up the employer dashboard ranking (-ats_score descending)
-            models.Index(fields=['-ats_score']), 
+            models.Index(fields=["candidate", "status"], name="idx_app_candidate_status"),
+            models.Index(fields=["job", "-applied_at"], name="idx_app_job_applied"),
         ]
         constraints = [
             models.UniqueConstraint(fields=['job', 'candidate'], name='unique_job_application')
