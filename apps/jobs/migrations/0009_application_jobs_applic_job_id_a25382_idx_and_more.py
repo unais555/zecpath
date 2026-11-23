@@ -4,19 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0008_notificationlog'),
-        ('users', '0006_candidateprofile_structured_resume_data'),
+        ("jobs", "0008_notificationlog"),
+        ("users", "0006_candidateprofile_structured_resume_data"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='application',
-            index=models.Index(fields=['job', 'status'], name='jobs_applic_job_id_a25382_idx'),
+            model_name="application",
+            index=models.Index(
+                fields=["job", "status"], name="jobs_applic_job_id_a25382_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='application',
-            index=models.Index(fields=['-ats_score'], name='jobs_applic_ats_sco_adfc61_idx'),
+            model_name="application",
+            index=models.Index(
+                fields=["-ats_score"], name="jobs_applic_ats_sco_adfc61_idx"
+            ),
         ),
     ]

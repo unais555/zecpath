@@ -1,22 +1,22 @@
-from locust import HttpUser, task, between
+from locust import HttpUser, between, task
+
 
 class ZecpathEmployerUser(HttpUser):
     # Wait 1-3 seconds between tasks to simulate human reading time
-    wait_time = between(1, 3) 
-    
+    wait_time = between(1, 3)
+
     def on_start(self):
         """Runs once per simulated user to log them in and get a JWT token."""
-        response = self.client.post("/auth/login/", json={
-            "email": "unais@gmail.com",
-            "password": "1234"
-        })
+        response = self.client.post(
+            "/auth/login/", json={"email": "unais@gmail.com", "password": "1234"}
+        )
         if response.status_code == 200:
-            self.token = response.json().get('access')
+            self.token = response.json().get("access")
             self.headers = {"Authorization": f"Bearer {self.token}"}
         else:
             self.token = None
 
-    @task(3) # Runs 3x more often than the AI task
+    @task(3)  # Runs 3x more often than the AI task
     def view_candidate_dashboard(self):
         """Simulate loading the main ATS dashboard."""
         if self.token:

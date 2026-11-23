@@ -5,15 +5,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0018_auditlog'),
+        ("jobs", "0018_auditlog"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='aianswer',
-            name='answer_text',
-            field=django_cryptography.fields.encrypt(models.TextField(help_text="The Speech-to-Text (STT) output of the candidate's voice.")),
+            model_name="aianswer",
+            name="answer_text",
+            field=django_cryptography.fields.encrypt(
+                models.TextField(
+                    help_text="The Speech-to-Text (STT) output of the candidate's voice."
+                )
+            ),
         ),
     ]

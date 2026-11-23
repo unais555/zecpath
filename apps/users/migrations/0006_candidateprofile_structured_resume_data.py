@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0005_candidateprofile_parsed_resume_text_and_more'),
+        ("users", "0005_candidateprofile_parsed_resume_text_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='candidateprofile',
-            name='structured_resume_data',
+            model_name="candidateprofile",
+            name="structured_resume_data",
             field=models.JSONField(blank=True, null=True),
         ),
     ]

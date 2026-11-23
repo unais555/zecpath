@@ -1,89 +1,116 @@
-from rest_framework import views, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
-from django.db.models import Sum, Count
-from django.db.models.functions import TruncMonth, TruncDay
-from apps.payments.models import PaymentTransaction, UserSubscription
-from apps.payments.serializers import PaymentTransactionSerializer
 import razorpay
 from django.conf import settings
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import generics, status, views
+from rest_framework.permissions import IsAdminUser
+from rest_framework.response import Response
+
+from apps.payments.models import PaymentTransaction
+from apps.payments.serializers import PaymentTransactionSerializer
 
 
 class AdminRevenueReportAPIView(views.APIView):
     """Generates financial metrics: Daily/Monthly revenue and Plan-wise splits."""
+
     permission_classes = [IsAdminUser]
 
-    @extend_schema(tags=["Admin Payments"], summary="Revenue & subscription report", responses={200: OpenApiTypes.OBJECT})
+    @extend_schema(
+        tags=["Admin Payments"],
+        summary="Revenue & subscription report",
+        responses={200: OpenApiTypes.OBJECT},
+    )
     def get(self, request):
         # 1. Total Revenue All-Time
-        total_revenue = PaymentTransaction.objects.filter(status='SUCCESS').aggregate(
-            total=Sum('amount')
-        )['total'] or 0.00
+        total_revenue = (
+            PaymentTransaction.objects.filter(status="SUCCESS").aggregate(total=Sum("amount"))[
+                "total"
+            ]
+            or 0.00
+        )
 
         # 2. Plan-wise Revenue Split
         # Using the related_name 'subscription' on EmployerProfile (if it exists)
         # If your UserSubscription model points to EmployerProfile with related_name="subscription"
-        plan_revenue = PaymentTransaction.objects.filter(status='SUCCESS').values(
-            'employer__subscription__plan__name'
-        ).annotate(
-            total_earned=Sum('amount'),
-            subscriber_count=Count('employer', distinct=True)
-        ).order_by('-total_earned')
+        plan_revenue = (
+            PaymentTransaction.objects.filter(status="SUCCESS")
+            .values("employer__subscription__plan__name")
+            .annotate(
+                total_earned=Sum("amount"),
+                subscriber_count=Count("employer", distinct=True),
+            )
+            .order_by("-total_earned")
+        )
 
         # 3. Monthly Revenue Trend (Last 6 Months)
-        monthly_trend = PaymentTransaction.objects.filter(status='SUCCESS').annotate(
-            month=TruncMonth('created_at')
-        ).values('month').annotate(
-            revenue=Sum('amount')
-        ).order_by('-month')[:6]
+        monthly_trend = (
+            PaymentTransaction.objects.filter(status="SUCCESS")
+            .annotate(month=TruncMonth("created_at"))
+            .values("month")
+            .annotate(revenue=Sum("amount"))
+            .order_by("-month")[:6]
+        )
 
-        return Response({
-            "total_revenue": round(total_revenue, 2),
-            "revenue_by_plan": plan_revenue,
-            "monthly_trend": monthly_trend
-        }, status=status.HTTP_200_OK)
-
+        return Response(
+            {
+                "total_revenue": round(total_revenue, 2),
+                "revenue_by_plan": plan_revenue,
+                "monthly_trend": monthly_trend,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(
     tags=["Admin Payments"],
     summary="List payment transactions",
     parameters=[
-        OpenApiParameter(name="status", type=str, location=OpenApiParameter.QUERY, description="Filter by status (e.g. SUCCESS, FAILED, PENDING, REFUNDED)"),
-        OpenApiParameter(name="employer_id", type=int, location=OpenApiParameter.QUERY, description="Filter by employer profile ID"),
+        OpenApiParameter(
+            name="status",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Filter by status (e.g. SUCCESS, FAILED, PENDING, REFUNDED)",
+        ),
+        OpenApiParameter(
+            name="employer_id",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Filter by employer profile ID",
+        ),
     ],
 )
 class AdminTransactionListAPIView(generics.ListAPIView):
     """Lists all transactions with filtering for audits (e.g., FAILED or SUSPICIOUS)."""
+
     permission_classes = [IsAdminUser]
     serializer_class = PaymentTransactionSerializer
-    
+
     def get_queryset(self):
-        queryset = PaymentTransaction.objects.select_related(
-            'employer', 
-            'employer__user'
-        ).all().order_by('-created_at')
-        
+        queryset = (
+            PaymentTransaction.objects.select_related("employer", "employer__user")
+            .all()
+            .order_by("-created_at")
+        )
+
         # Filter by status (e.g., ?status=FAILED to audit drops)
-        status_param = self.request.query_params.get('status', None)
+        status_param = self.request.query_params.get("status", None)
         if status_param:
             queryset = queryset.filter(status=status_param.upper())
-            
+
         # Filter by Employer ID directly on the PaymentTransaction model
-        employer_id = self.request.query_params.get('employer_id', None)
+        employer_id = self.request.query_params.get("employer_id", None)
         if employer_id:
             queryset = queryset.filter(employer_id=employer_id)
-            
-        return queryset
 
+        return queryset
 
 
 class AdminRefundTransactionAPIView(views.APIView):
     """Triggers a refund via Razorpay and updates the internal financial ledger."""
+
     permission_classes = [IsAdminUser]
 
     @extend_schema(
@@ -92,42 +119,43 @@ class AdminRefundTransactionAPIView(views.APIView):
         request={
             "application/json": {
                 "type": "object",
-                "properties": {
-                    "reason": {"type": "string", "example": "Admin requested refund"}
-                },
+                "properties": {"reason": {"type": "string", "example": "Admin requested refund"}},
             }
         },
         responses={200: OpenApiTypes.OBJECT},
     )
     def post(self, request, transaction_id):
         transaction = get_object_or_404(PaymentTransaction, id=transaction_id)
-        
-        if transaction.status != 'SUCCESS':
+
+        if transaction.status != "SUCCESS":
             return Response(
-                {"error": "Only successful transactions can be refunded."}, 
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Only successful transactions can be refunded."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
             client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-            
+
             # Using your specific field: gateway_transaction_id
-            refund = client.payment.refund(transaction.gateway_transaction_id, {
-                "amount": int(transaction.amount * 100), 
-                "notes": {
-                    "reason": request.data.get("reason", "Admin requested refund"),
-                    "admin_id": request.user.id
-                }
-            })
-            
+            refund = client.payment.refund(
+                transaction.gateway_transaction_id,
+                {
+                    "amount": int(transaction.amount * 100),
+                    "notes": {
+                        "reason": request.data.get("reason", "Admin requested refund"),
+                        "admin_id": request.user.id,
+                    },
+                },
+            )
+
             # Update local database log
-            transaction.status = 'REFUNDED' # Ensure 'REFUNDED' is added to your model choices if you want strict validation
+            transaction.status = "REFUNDED"  # Ensure 'REFUNDED' is added to your model choices if you want strict validation
             transaction.save()
 
-            return Response({
-                "message": "Refund processed successfully",
-                "refund_id": refund['id']
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Refund processed successfully", "refund_id": refund["id"]},
+                status=status.HTTP_200_OK,
+            )
 
         except razorpay.errors.BadRequestError as e:
-            return Response({"error": f"Gateway Error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Gateway Error: {e!s}"}, status=status.HTTP_400_BAD_REQUEST)

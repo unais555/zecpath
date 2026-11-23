@@ -5,24 +5,51 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0014_availabilityslot_interviewschedule'),
+        ("jobs", "0014_availabilityslot_interviewschedule"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='InterviewReminderLog',
+            name="InterviewReminderLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('reminder_type', models.CharField(choices=[('24H', '24 Hours Before'), ('1H', '1 Hour Before')], max_length=10)),
-                ('status', models.CharField(choices=[('SENT', 'Sent Successfully'), ('FAILED', 'Failed')], default='SENT', max_length=10)),
-                ('sent_at', models.DateTimeField(auto_now_add=True)),
-                ('error_message', models.TextField(blank=True, null=True)),
-                ('schedule', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reminders', to='jobs.interviewschedule')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "reminder_type",
+                    models.CharField(
+                        choices=[("24H", "24 Hours Before"), ("1H", "1 Hour Before")],
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("SENT", "Sent Successfully"), ("FAILED", "Failed")],
+                        default="SENT",
+                        max_length=10,
+                    ),
+                ),
+                ("sent_at", models.DateTimeField(auto_now_add=True)),
+                ("error_message", models.TextField(blank=True, null=True)),
+                (
+                    "schedule",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="reminders",
+                        to="jobs.interviewschedule",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('schedule', 'reminder_type')},
+                "unique_together": {("schedule", "reminder_type")},
             },
         ),
     ]

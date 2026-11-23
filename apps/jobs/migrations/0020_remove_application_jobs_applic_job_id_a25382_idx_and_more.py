@@ -4,35 +4,42 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0019_alter_aianswer_answer_text'),
-        ('users', '0007_alter_user_phone'),
+        ("jobs", "0019_alter_aianswer_answer_text"),
+        ("users", "0007_alter_user_phone"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='application',
-            name='jobs_applic_job_id_a25382_idx',
+            model_name="application",
+            name="jobs_applic_job_id_a25382_idx",
         ),
         migrations.RemoveIndex(
-            model_name='application',
-            name='jobs_applic_ats_sco_adfc61_idx',
+            model_name="application",
+            name="jobs_applic_ats_sco_adfc61_idx",
         ),
         migrations.AddIndex(
-            model_name='application',
-            index=models.Index(fields=['candidate', 'status'], name='idx_app_candidate_status'),
+            model_name="application",
+            index=models.Index(
+                fields=["candidate", "status"], name="idx_app_candidate_status"
+            ),
         ),
         migrations.AddIndex(
-            model_name='application',
-            index=models.Index(fields=['job', '-applied_at'], name='idx_app_job_applied'),
+            model_name="application",
+            index=models.Index(
+                fields=["job", "-applied_at"], name="idx_app_job_applied"
+            ),
         ),
         migrations.AddIndex(
-            model_name='job',
-            index=models.Index(fields=['is_active', '-created_at'], name='idx_job_active_created'),
+            model_name="job",
+            index=models.Index(
+                fields=["is_active", "-created_at"], name="idx_job_active_created"
+            ),
         ),
         migrations.AddIndex(
-            model_name='job',
-            index=models.Index(fields=['location', 'job_type'], name='idx_job_loc_type'),
+            model_name="job",
+            index=models.Index(
+                fields=["location", "job_type"], name="idx_job_loc_type"
+            ),
         ),
     ]

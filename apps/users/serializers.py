@@ -1,14 +1,16 @@
 import os
-from rest_framework import serializers
+
 from django.contrib.auth import get_user_model
+from rest_framework import serializers
+
 from .models import CandidateProfile, EmployerProfile
 from .services import create_user_account
 
-
 User = get_user_model()
 
+
 class UserRegistrationSerializers(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, style={'input_type': 'password'})
+    password = serializers.CharField(write_only=True, style={"input_type": "password"})
 
     class Meta:
         model = User
@@ -16,24 +18,33 @@ class UserRegistrationSerializers(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = create_user_account(
-            email = validated_data['email'],
-            phone = validated_data.get('phone', ''),
-            password = validated_data["password"],
-            role = validated_data['role']
+            email=validated_data["email"],
+            phone=validated_data.get("phone", ""),
+            password=validated_data["password"],
+            role=validated_data["role"],
         )
         return user
+
 
 class CandidateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CandidateProfile
-        fields = ['id', 'skills', 'education', 'experience', 'expected_salary', 'resume']
-        
+        fields = [
+            "id",
+            "skills",
+            "education",
+            "experience",
+            "expected_salary",
+            "resume",
+        ]
+
 
 class EmployerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployerProfile
-        fields = ['id', 'company_name', 'domain', 'size', 'is_verified']
-        read_only_fields = ['is_verified']
+        fields = ["id", "company_name", "domain", "size", "is_verified"]
+        read_only_fields = ["is_verified"]
+
 
 class ResumeUploadSerializer(serializers.Serializer):
     resume = serializers.FileField(required=True)
@@ -44,7 +55,9 @@ class ResumeUploadSerializer(serializers.Serializer):
             raise serializers.ValidationError("Resume file size cannot exceed 5MB.")
 
         ext = os.path.splitext(file.name)[1].lower()
-        if ext not in ['.pdf', '.docx']:
-            raise serializers.ValidationError("Unsupported file type. Please upload a .pdf or .docx file.")
+        if ext not in [".pdf", ".docx"]:
+            raise serializers.ValidationError(
+                "Unsupported file type. Please upload a .pdf or .docx file."
+            )
 
         return file

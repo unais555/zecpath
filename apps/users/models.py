@@ -1,15 +1,17 @@
-from django.db import models
 import uuid
-import os
-from .validators import validate_resume_extentions, validate_resume_size
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db import models
 from django_cryptography.fields import encrypt
+
+from .validators import validate_resume_extentions, validate_resume_size
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('The Email field must be set')
+            raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -17,18 +19,19 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError('Superuser must have is_staff=True.')
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser must have is_superuser=True.')
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+
+        if extra_fields.get("is_staff") is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get("is_superuser") is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
 
         return self.create_user(email, password, **extra_fields)
 
+
 def resume_upload_path(instance, filename):
-    ext = filename.split('.')[-1].lower()
+    ext = filename.split(".")[-1].lower()
     new_filename = f"candidate_{instance.user.id}_{uuid.uuid4().hex[:8]}.{ext}"
     return f"resumes/{new_filename}"
 
@@ -47,7 +50,6 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
@@ -57,7 +59,6 @@ class User(AbstractUser):
         return self.email
 
 
-
 class EmployerProfile(models.Model):
     class CompanySize(models.TextChoices):
         MICRO = "1-10", "1-10 employees"
@@ -65,13 +66,13 @@ class EmployerProfile(models.Model):
         MEDIUM = "51-200", "51-200 employees"
         LARGE = "201-500", "201-500 employees"
         ENTERPRISE = "500+", "500+ employees"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="employer_profile")
     company_name = models.CharField(max_length=255)
     domain = models.CharField(max_length=100, help_text="e.g., IT, Healthcare, Finance", blank=True)
     size = models.CharField(max_length=20, choices=CompanySize.choices, blank=True)
     is_verified = models.BooleanField(
-        default=False, 
-        help_text="Indicates if the company's identity has been vetted."
+        default=False, help_text="Indicates if the company's identity has been vetted."
     )
 
     def __str__(self):
@@ -83,50 +84,51 @@ class CandidateProfile(models.Model):
     resume = models.FileField(
         upload_to=resume_upload_path,
         validators=[validate_resume_size, validate_resume_extentions],
-        blank = True,
-        null= True,
+        blank=True,
+        null=True,
     )
     skills = models.TextField(
-        blank=True, 
-        help_text="Comma-separated list of skills (e.g., Python, Django, React)"
+        blank=True,
+        help_text="Comma-separated list of skills (e.g., Python, Django, React)",
     )
     education = models.TextField(
-        blank=True, 
-        help_text="Details of degrees, certifications, and institutions"
+        blank=True, help_text="Details of degrees, certifications, and institutions"
     )
     experience = models.PositiveIntegerField(
-        default=0, 
-        help_text="Total years of professional experience"
+        default=0, help_text="Total years of professional experience"
     )
     expected_salary = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        null=True, 
-        blank=True, 
-        help_text="Expected annual salary"
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Expected annual salary",
     )
     parsed_resume_text = models.TextField(
-        blank=True, 
-        null=True, 
-        help_text="Automatically extracted and normalized text from the candidate's resume."
+        blank=True,
+        null=True,
+        help_text="Automatically extracted and normalized text from the candidate's resume.",
     )
     resume_parsed_at = models.DateTimeField(blank=True, null=True)
 
     structured_resume_data = models.JSONField(blank=True, null=True)
 
-
     def __str__(self):
         return f"Candidate Profile for {self.user.email}"
 
 
-
-
 class AdminActionLog(models.Model):
-    admin = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='admin_actions')
-    action = models.CharField(max_length=255, help_text="What the admin did (e.g., 'Approved Employer', 'Deleted Spam Job')")
-    target_object = models.CharField(max_length=255, help_text="The affected entity (e.g., 'Company: TechCorp')")
+    admin = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="admin_actions"
+    )
+    action = models.CharField(
+        max_length=255,
+        help_text="What the admin did (e.g., 'Approved Employer', 'Deleted Spam Job')",
+    )
+    target_object = models.CharField(
+        max_length=255, help_text="The affected entity (e.g., 'Company: TechCorp')"
+    )
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.admin.email} - {self.action} at {self.timestamp}"
-    

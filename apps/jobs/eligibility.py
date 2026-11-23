@@ -1,5 +1,7 @@
-from django.utils import timezone
 import datetime
+
+from django.utils import timezone
+
 
 class CallEligibilityEngine:
     ATS_THRESHOLD = 70.0
@@ -8,16 +10,16 @@ class CallEligibilityEngine:
     @classmethod
     def is_eligible(cls, application):
         # job status validation
-        if application.job.status != 'OPEN' or not application.job.is_automation_enabled:
+        if application.job.status != "OPEN" or not application.job.is_automation_enabled:
             return False
 
-        # ATS threshold 
+        # ATS threshold
         if application.ats_score < cls.ATS_THRESHOLD:
             return False
 
         # Prevent Duplication
-        if hasattr(application, 'ai_call'):
-            if application.ai_calls.status in ['QUEUED', 'IN_PROGRESS', 'COMPLETED']:
+        if hasattr(application, "ai_call"):
+            if application.ai_calls.status in ["QUEUED", "IN_PROGRESS", "COMPLETED"]:
                 return False
             if application.ai_call.retry_count >= cls.MAX_RETRIES:
                 return False, "Max retry limit reached."

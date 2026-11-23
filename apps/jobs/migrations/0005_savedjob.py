@@ -5,23 +5,46 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0004_alter_application_status_applicationlog'),
-        ('users', '0003_candidateprofile_resume'),
+        ("jobs", "0004_alter_application_status_applicationlog"),
+        ("users", "0003_candidateprofile_resume"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SavedJob',
+            name="SavedJob",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('saved_at', models.DateTimeField(auto_now_add=True)),
-                ('candidate', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='saved_jobs', to='users.candidateprofile')),
-                ('job', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='jobs.job')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("saved_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "candidate",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="saved_jobs",
+                        to="users.candidateprofile",
+                    ),
+                ),
+                (
+                    "job",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="jobs.job"
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('candidate', 'job'), name='unique_saved_jobs')],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("candidate", "job"), name="unique_saved_jobs"
+                    )
+                ],
             },
         ),
     ]

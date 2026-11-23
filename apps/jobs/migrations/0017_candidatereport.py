@@ -5,22 +5,55 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0016_alter_interviewreminderlog_reminder_type'),
+        ("jobs", "0016_alter_interviewreminderlog_reminder_type"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CandidateReport',
+            name="CandidateReport",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('overall_score', models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True)),
-                ('summary', models.TextField(help_text="Executive summary of the candidate's performance.")),
-                ('strengths', models.JSONField(default=list, help_text='Array of key strengths.')),
-                ('risks', models.JSONField(default=list, help_text='Array of potential risks or weaknesses.')),
-                ('generated_at', models.DateTimeField(auto_now_add=True)),
-                ('application', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='report', to='jobs.application')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "overall_score",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=5, null=True
+                    ),
+                ),
+                (
+                    "summary",
+                    models.TextField(
+                        help_text="Executive summary of the candidate's performance."
+                    ),
+                ),
+                (
+                    "strengths",
+                    models.JSONField(default=list, help_text="Array of key strengths."),
+                ),
+                (
+                    "risks",
+                    models.JSONField(
+                        default=list,
+                        help_text="Array of potential risks or weaknesses.",
+                    ),
+                ),
+                ("generated_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "application",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="report",
+                        to="jobs.application",
+                    ),
+                ),
             ],
         ),
     ]

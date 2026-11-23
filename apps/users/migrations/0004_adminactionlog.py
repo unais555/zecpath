@@ -6,20 +6,46 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0003_candidateprofile_resume'),
+        ("users", "0003_candidateprofile_resume"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AdminActionLog',
+            name="AdminActionLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('timestamp', models.DateTimeField(auto_created=True)),
-                ('action', models.CharField(help_text="What the admin did (e.g., 'Approved Employer', 'Deleted Spam Job')", max_length=255)),
-                ('target_object', models.CharField(help_text="The affected entity (e.g., 'Company: TechCorp')", max_length=255)),
-                ('admin', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='admin_actions', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_created=True)),
+                (
+                    "action",
+                    models.CharField(
+                        help_text="What the admin did (e.g., 'Approved Employer', 'Deleted Spam Job')",
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "target_object",
+                    models.CharField(
+                        help_text="The affected entity (e.g., 'Company: TechCorp')",
+                        max_length=255,
+                    ),
+                ),
+                (
+                    "admin",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="admin_actions",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

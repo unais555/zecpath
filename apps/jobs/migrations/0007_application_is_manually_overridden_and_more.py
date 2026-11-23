@@ -4,30 +4,35 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0006_application_ats_score'),
+        ("jobs", "0006_application_ats_score"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='application',
-            name='is_manually_overridden',
+            model_name="application",
+            name="is_manually_overridden",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='job',
-            name='auto_reject_threshold',
-            field=models.IntegerField(default=40, help_text='ATS score (0-100) below which candidates are automatically rejected.'),
+            model_name="job",
+            name="auto_reject_threshold",
+            field=models.IntegerField(
+                default=40,
+                help_text="ATS score (0-100) below which candidates are automatically rejected.",
+            ),
         ),
         migrations.AddField(
-            model_name='job',
-            name='auto_shortlist_threshold',
-            field=models.IntegerField(default=80, help_text='ATS score (0-100) required to automatically shortlist.'),
+            model_name="job",
+            name="auto_shortlist_threshold",
+            field=models.IntegerField(
+                default=80,
+                help_text="ATS score (0-100) required to automatically shortlist.",
+            ),
         ),
         migrations.AddField(
-            model_name='job',
-            name='is_automation_enabled',
+            model_name="job",
+            name="is_automation_enabled",
             field=models.BooleanField(default=True),
         ),
     ]

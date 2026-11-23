@@ -4,15 +4,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0015_interviewreminderlog'),
+        ("jobs", "0015_interviewreminderlog"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='interviewreminderlog',
-            name='reminder_type',
-            field=models.CharField(choices=[('24H', '24 Hours Before'), ('1H', '1 Hour Before'), ('MANUAL', 'Manual Ad-Hoc')], max_length=10),
+            model_name="interviewreminderlog",
+            name="reminder_type",
+            field=models.CharField(
+                choices=[
+                    ("24H", "24 Hours Before"),
+                    ("1H", "1 Hour Before"),
+                    ("MANUAL", "Manual Ad-Hoc"),
+                ],
+                max_length=10,
+            ),
         ),
     ]

@@ -5,15 +5,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('users', '0006_candidateprofile_structured_resume_data'),
+        ("users", "0006_candidateprofile_structured_resume_data"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='phone',
-            field=django_cryptography.fields.encrypt(models.CharField(blank=True, max_length=15, null=True)),
+            model_name="user",
+            name="phone",
+            field=django_cryptography.fields.encrypt(
+                models.CharField(blank=True, max_length=15, null=True)
+            ),
         ),
     ]

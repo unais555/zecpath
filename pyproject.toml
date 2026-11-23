@@ -1,0 +1,9 @@
+[tool.ruff]
+line-length = 100
+exclude = ["**/migrations/*", "venv", "schema.yml"]
+
+[tool.ruff.lint]
+ignore = [
+    "RUF012",  # Django/DRF class attributes (permission_classes, Meta.fields, etc.)
+    "BLE001",  # Broad except Exception used intentionally in API/Celery fallbacks
+]

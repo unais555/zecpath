@@ -6,28 +6,88 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('jobs', '0003_application'),
+        ("jobs", "0003_application"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='application',
-            name='status',
-            field=models.CharField(choices=[('applied', 'Applied'), ('shortlisted', 'Shortlisted'), ('interview_scheduled', 'Interview Scheduled'), ('rejected', 'Rejected'), ('selected', 'Selected')], default='applied', max_length=20),
+            model_name="application",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("applied", "Applied"),
+                    ("shortlisted", "Shortlisted"),
+                    ("interview_scheduled", "Interview Scheduled"),
+                    ("rejected", "Rejected"),
+                    ("selected", "Selected"),
+                ],
+                default="applied",
+                max_length=20,
+            ),
         ),
         migrations.CreateModel(
-            name='ApplicationLog',
+            name="ApplicationLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('old_status', models.CharField(choices=[('applied', 'Applied'), ('shortlisted', 'Shortlisted'), ('interview_scheduled', 'Interview Scheduled'), ('rejected', 'Rejected'), ('selected', 'Selected')], max_length=30)),
-                ('new_status', models.CharField(choices=[('applied', 'Applied'), ('shortlisted', 'Shortlisted'), ('interview_scheduled', 'Interview Scheduled'), ('rejected', 'Rejected'), ('selected', 'Selected')], max_length=30)),
-                ('notes', models.TextField(blank=True, help_text='Optional feedback from the employer.')),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('application', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='status_logs', to='jobs.application')),
-                ('updated_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "old_status",
+                    models.CharField(
+                        choices=[
+                            ("applied", "Applied"),
+                            ("shortlisted", "Shortlisted"),
+                            ("interview_scheduled", "Interview Scheduled"),
+                            ("rejected", "Rejected"),
+                            ("selected", "Selected"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "new_status",
+                    models.CharField(
+                        choices=[
+                            ("applied", "Applied"),
+                            ("shortlisted", "Shortlisted"),
+                            ("interview_scheduled", "Interview Scheduled"),
+                            ("rejected", "Rejected"),
+                            ("selected", "Selected"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "notes",
+                    models.TextField(
+                        blank=True, help_text="Optional feedback from the employer."
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                (
+                    "application",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="status_logs",
+                        to="jobs.application",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

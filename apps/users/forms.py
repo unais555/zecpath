@@ -3,14 +3,12 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 class UserRegistrationForm(forms.ModelForm):
     role = forms.ChoiceField(
-        choices=[
-            (User.Role.EMPLOYER, "Employer"),
-            (User.Role.CANDIDATE, "Candidate")
-        ],
+        choices=[(User.Role.EMPLOYER, "Employer"), (User.Role.CANDIDATE, "Candidate")],
         required=True,
-        help_text="Select your account type."
+        help_text="Select your account type.",
     )
 
     password = forms.CharField(

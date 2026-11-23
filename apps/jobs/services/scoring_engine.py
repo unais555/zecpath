@@ -1,9 +1,10 @@
 import json
+
 import openai
 from django.conf import settings
-from apps.jobs.models import AIAnswer
 
 openai.api_key = settings.OPENAI_API_KEY
+
 
 class AnswerScoringEngine:
     @classmethod
@@ -29,23 +30,23 @@ class AnswerScoringEngine:
                 messages=[{"role": "system", "content": prompt}],
                 response_format={"type": "json_object"},
                 max_tokens=150,
-                temperature=0.3 # Low temperature for consistent scoring
+                temperature=0.3,  # Low temperature for consistent scoring
             )
-            
+
             result = json.loads(response.choices[0].message.content)
-            
+
             # Save the annotations
-            answer_instance.relevance_score = result.get('relevance', 0)
-            answer_instance.completeness_score = result.get('completeness', 0)
-            answer_instance.feedback = result.get('feedback', 'No feedback provided.')
-            
+            answer_instance.relevance_score = result.get("relevance", 0)
+            answer_instance.completeness_score = result.get("completeness", 0)
+            answer_instance.feedback = result.get("feedback", "No feedback provided.")
+
             # Run normalization logic
             answer_instance.calculate_normalized_score()
             answer_instance.save()
-            
+
             return answer_instance
-            
-        except Exception as e:
+
+        except Exception:
             # Fallback for API failure
             answer_instance.feedback = "Error evaluating answer."
             answer_instance.save()

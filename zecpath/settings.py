@@ -10,18 +10,20 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
-from pathlib import Path
-import environ
+import os
 from datetime import timedelta
-import os
-from celery.schedules import crontab
-import os
+from pathlib import Path
+
 import dj_database_url
+import environ
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env = environ.Env(DEBUG=(bool, False),)
+env = environ.Env(
+    DEBUG=(bool, False),
+)
 environ.Env.read_env(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
@@ -35,17 +37,16 @@ DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=[])
 
-TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN')
-TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER')
-OPENAI_API_KEY = env('OPENAI_API_KEY')
-RAZORPAY_WEBHOOK_SECRET= env('RAZORPAY_WEBHOOK_SECRET')
-RAZORPAY_KEY_ID = env('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = env('RAZORPAY_KEY_SECRET')
+TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = env("TWILIO_PHONE_NUMBER")
+OPENAI_API_KEY = env("OPENAI_API_KEY")
+RAZORPAY_WEBHOOK_SECRET = env("RAZORPAY_WEBHOOK_SECRET")
+RAZORPAY_KEY_ID = env("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = env("RAZORPAY_KEY_SECRET")
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 CELERY_TASK_ALWAYS_EAGER = False
-
 
 
 # --- Cloud Storage & CDN (Supabase S3-Compatible) ---
@@ -56,12 +57,12 @@ AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="ap-south-1")
 AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL")
 
 # Supabase S3 Compatibility & Security Controls
-AWS_S3_ADDRESSING_STYLE = "path"          # Required for Supabase S3 endpoints
-AWS_S3_SIGNATURE_VERSION = "s3v4"         # Required for temporary signed URLs
-AWS_DEFAULT_ACL = None                    # Enforces private bucket policy
-AWS_S3_FILE_OVERWRITE = False             # Prevents overwriting files with the same name
-AWS_QUERYSTRING_AUTH = True               # Generates temporary signed access URLs
-AWS_QUERYSTRING_EXPIRE = 300              # Signed URLs expire after 300 seconds (5 mins)
+AWS_S3_ADDRESSING_STYLE = "path"  # Required for Supabase S3 endpoints
+AWS_S3_SIGNATURE_VERSION = "s3v4"  # Required for temporary signed URLs
+AWS_DEFAULT_ACL = None  # Enforces private bucket policy
+AWS_S3_FILE_OVERWRITE = False  # Prevents overwriting files with the same name
+AWS_QUERYSTRING_AUTH = True  # Generates temporary signed access URLs
+AWS_QUERYSTRING_EXPIRE = 300  # Signed URLs expire after 300 seconds (5 mins)
 
 # --- Django 6.0 Storage Backends ---
 STORAGES = {
@@ -74,60 +75,56 @@ STORAGES = {
 }
 
 
-
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    #third party apps
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
-    'django_filters',
-    'silk',
-
-    #local apps
-    'apps.users',
-    'apps.jobs',
-    'apps.applications',
-    'apps.payments',
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    # third party apps
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "django_filters",
+    "silk",
+    # local apps
+    "apps.users",
+    "apps.jobs",
+    "apps.applications",
+    "apps.payments",
     "drf_spectacular",
-    'django_celery_results',
-    'django_celery_beat',
+    "django_celery_results",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
-    'silk.middleware.SilkyMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.payments.middleware.SubscriptionEnforcementMiddleware',
+    "silk.middleware.SilkyMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.payments.middleware.SubscriptionEnforcementMiddleware",
 ]
 
-ROOT_URLCONF = 'zecpath.urls'
+ROOT_URLCONF = "zecpath.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -137,37 +134,37 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
         },
     },
-    'handlers': {
-        'file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'django_errors.log'),
-            'formatter': 'verbose',
+    "handlers": {
+        "file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "django_errors.log"),
+            "formatter": "verbose",
         },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
+    "loggers": {
+        "django": {
+            "handlers": ["file", "console"],
+            "level": "INFO",
+            "propagate": True,
         },
     },
 }
 
 
-WSGI_APPLICATION = 'zecpath.wsgi.application'
+WSGI_APPLICATION = "zecpath.wsgi.application"
 
 
 REST_FRAMEWORK = {
@@ -175,28 +172,27 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    "DEFAULT_AUTHENTICATION_CLASSES" : (
+    "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    'EXCEPTION_HANDLER': 'apps.users.exceptions.standardized_exception_handler',
-    "DEFAULT_PAGINATION_CLASS" : "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE" : 5,
-
-    "DEFAULT_FILTER_BACKENDS" : (
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
+    "EXCEPTION_HANDLER": "apps.users.exceptions.standardized_exception_handler",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 5,
+    "DEFAULT_FILTER_BACKENDS": (
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
     ),
-    'DEFAULT_THROTTLE_CLASSES': [
-            'rest_framework.throttling.AnonRateThrottle',
-            'rest_framework.throttling.UserRateThrottle',
-        ],
-        'DEFAULT_THROTTLE_RATES': {
-            'anon': '60/minute',      # Unauthenticated users (e.g., login attempts)
-            'user': '120/minute',     # Standard authenticated users
-            'ai_report': '10/day',    # Custom strict throttle for OpenAI endpoints
-            'login': '5/minute',
-        }
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/minute",  # Unauthenticated users (e.g., login attempts)
+        "user": "120/minute",  # Standard authenticated users
+        "ai_report": "10/day",  # Custom strict throttle for OpenAI endpoints
+        "login": "5/minute",
+    },
 }
 
 
@@ -219,16 +215,15 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME" : timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME" : timedelta(days=7),
-    "ROTATE_REFRESH_TOKEN" : True,
-    "BLACKLIST_AFTER_ROTATION" : True,
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKEN": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
     "ALGORITHM": "HS256",
     "SIGNING_KEY": SECRET_KEY,
-    "AUTH_HEADER_TYPES" : ("Bearer",)
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 
@@ -255,16 +250,16 @@ AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -272,9 +267,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -284,123 +279,124 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 
-MEDIA_URL = '/media/'
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
 MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    "default": {
+        "BACKEND": "django.core.mail.backends.console.EmailBackend",
     },
 }
 
 REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/1")
 
 CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Asia/Kolkata' 
-
-
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "Asia/Kolkata"
 
 
 CELERY_BEAT_SCHEDULE = {
-    'send-daily-interview-reminders': {
-        'task': 'apps.jobs.tasks.send_async_email',
-        'schedule': crontab(hour=9, minute=0),
-        'args': (['dummy@test.com', 'Reminder', 'reminder_template', {}, 'REMINDER']),
+    "send-daily-interview-reminders": {
+        "task": "apps.jobs.tasks.send_async_email",
+        "schedule": crontab(hour=9, minute=0),
+        "args": (["dummy@test.com", "Reminder", "reminder_template", {}, "REMINDER"]),
     },
 }
 
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache', # or 'django.core.cache.backends.redis.RedisCache' depending on what you use
-        'LOCATION': REDIS_URL,
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        }
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",  # or 'django.core.cache.backends.redis.RedisCache' depending on what you use
+        "LOCATION": REDIS_URL,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
     }
 }
 
-LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+LOGS_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOGS_DIR, exist_ok=True)
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {name} {process:d} {thread:d} - {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {name} {process:d} {thread:d} - {message}",
+            "style": "{",
         },
-        'simple': {
-            'format': '{levelname} {asctime} - {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-        },
-        'file_app': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOGS_DIR, 'application.log'),
-            'formatter': 'verbose',
-        },
-        'file_error': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOGS_DIR, 'error.log'),
-            'formatter': 'verbose',
-        },
-        'file_security': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(LOGS_DIR, 'security.log'),
-            'formatter': 'verbose',
+        "simple": {
+            "format": "{levelname} {asctime} - {message}",
+            "style": "{",
         },
     },
-    'loggers': {
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file_app": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "application.log"),
+            "formatter": "verbose",
+        },
+        "file_error": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "error.log"),
+            "formatter": "verbose",
+        },
+        "file_security": {
+            "level": "WARNING",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOGS_DIR, "security.log"),
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
         # Standard Django requests and errors
-        'django': {
-            'handlers': ['console', 'file_app', 'file_error'],
-            'level': 'INFO',
-            'propagate': True,
+        "django": {
+            "handlers": ["console", "file_app", "file_error"],
+            "level": "INFO",
+            "propagate": True,
         },
         # Custom Zecpath AI Event Logger
-        'zecpath.ai': {
-            'handlers': ['console', 'file_app'],
-            'level': 'INFO',
-            'propagate': False,
+        "zecpath.ai": {
+            "handlers": ["console", "file_app"],
+            "level": "INFO",
+            "propagate": False,
         },
         # Custom Zecpath Security Logger
-        'zecpath.security': {
-            'handlers': ['console', 'file_security'],
-            'level': 'WARNING',
-            'propagate': False,
-        }
-    }
+        "zecpath.security": {
+            "handlers": ["console", "file_security"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
 }
 
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # Required behind Render's proxy
+    SECURE_PROXY_SSL_HEADER = (
+        "HTTP_X_FORWARDED_PROTO",
+        "https",
+    )  # Required behind Render's proxy
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000          # 1 year HSTS
+    SECURE_HSTS_SECONDS = 31536000  # 1 year HSTS
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True      # Prevents MIME-sniffing XSS
+    SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevents MIME-sniffing XSS
     X_FRAME_OPTIONS = "DENY"

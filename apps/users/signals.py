@@ -1,11 +1,13 @@
 import os
+
+from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import CandidateProfile, EmployerProfile
-from django.contrib.auth import get_user_model
 
+from .models import CandidateProfile, EmployerProfile
 
 User = get_user_model()
+
 
 @receiver(post_save, sender=User)
 def manage_user_profile(sender, instance, created, **kwargs):
@@ -16,12 +18,11 @@ def manage_user_profile(sender, instance, created, **kwargs):
             EmployerProfile.objects.create(user=instance)
 
     else:
-        if instance.role == User.Role.CANDIDATE:
-            if hasattr(instance, 'candidate_profile'):
-                instance.candidate_profile.save()
-        elif instance.role == User.Role.EMPLOYER:
-            if hasattr(instance, 'employer_profile'):
-                instance.employer_profile.save()
+        if instance.role == User.Role.CANDIDATE and hasattr(instance, "candidate_profile"):
+            instance.candidate_profile.save()
+        elif instance.role == User.Role.EMPLOYER and hasattr(instance, "employer_profile"):
+            instance.employer_profile.save()
+
 
 @receiver(pre_save, sender=CandidateProfile)
 def auto_delete_file_on_change(sender, instance, **kwargs):
@@ -36,6 +37,5 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
     old_file = old_profile.resume
     new_file = instance.resume
 
-    if old_file and old_file != new_file:
-        if os.path.isfile(old_file.path):
-            os.remove(old_file.path)
+    if old_file and old_file != new_file and os.path.isfile(old_file.path):
+        os.remove(old_file.path)
