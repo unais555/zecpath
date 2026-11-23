@@ -46,7 +46,7 @@ class AdminPlatformStatsAPIView(APIView):
                 ).count(),
             },
         }
-        return Response({"success": True, "metrices": metrics})
+        return Response({"success": True, "metrics": metrics})
 
 
 class AdminVerifyEmployerAPIView(APIView):

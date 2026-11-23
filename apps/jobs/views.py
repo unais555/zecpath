@@ -624,7 +624,7 @@ class PremiumAnalyticsAPIView(views.APIView):
 
     @extend_schema(tags=["Analytics"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
-        employer = request.user.employer
+        employer = request.user.employer_profile
 
         # --- A. Hiring Efficiency Metrics ---
         # Calculate how many applicants were processed vs rejected/hired
@@ -632,7 +632,7 @@ class PremiumAnalyticsAPIView(views.APIView):
             total_jobs=Count("id"),
             total_candidates=Count("applications"),
             ai_screened=Count("applications", filter=Q(applications__report__isnull=False)),
-            hired=Count("applications", filter=Q(applications__status="HIRED")),
+            hired=Count("applications", filter=Q(applications__status="selected")),
         )
 
         # Avoid division by zero

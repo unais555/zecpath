@@ -2,6 +2,7 @@ import json
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -21,6 +22,7 @@ User = get_user_model()
 
 class CandidateReportAPITests(APITestCase):
     def setUp(self):
+        cache.clear()
         # 1. Setup Users (Employer who owns the job, Candidate, and a random Employer)
         self.employer_user = User.objects.create_user(
             email="emp_report@test.com", password="pwd", role=User.Role.EMPLOYER

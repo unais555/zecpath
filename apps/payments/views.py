@@ -125,13 +125,13 @@ class SubscriptionStatusAPIView(views.APIView):
 
     @extend_schema(tags=["Payments"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
-        if not hasattr(request.user, "employer"):
+        if not hasattr(request.user, "employer_profile"):
             return Response(
                 {"error": "Only employers have billing profiles."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        subscription = getattr(request.user.employer, "subscription", None)
+        subscription = getattr(request.user.employer_profile, "subscription", None)
 
         if not subscription:
             return Response({"status": "NO_SUBSCRIPTION"}, status=status.HTTP_200_OK)

@@ -10,7 +10,7 @@ class CallEligibilityEngine:
     @classmethod
     def is_eligible(cls, application):
         # job status validation
-        if application.job.status != "OPEN" or not application.job.is_automation_enabled:
+        if application.job.status != "open" or not application.job.is_automation_enabled:
             return False
 
         # ATS threshold

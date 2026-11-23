@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.jobs.models import Job
 from apps.users.models import EmployerProfile
@@ -120,3 +121,23 @@ class SubscriptionFeatureTests(APITestCase):
         response = self.client.get("/employer/analytics/")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_middleware_blocks_free_tier_with_jwt_token(self):
+        """Validates middleware enforces subscription rules on JWT Bearer requests."""
+        self.client.force_authenticate(user=None)  # Clear DRF test auth
+        access_token = str(RefreshToken.for_user(self.user).access_token)
+
+        response = self.client.get(
+            "/employer/analytics/",
+            HTTP_AUTHORIZATION=f"Bearer {access_token}",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_subscription_status_endpoint_returns_active_plan(self):
+        """Regression test: ensures timezone.now() and employer_profile work without crashing."""
+        response = self.client.get("/payments/status/")  # adjust to your exact URL
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "ACTIVE")
+        self.assertEqual(response.data["plan_name"], self.free_plan.name)
