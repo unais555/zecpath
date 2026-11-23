@@ -9,12 +9,15 @@ import razorpay
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 
 class AdminRevenueReportAPIView(views.APIView):
     """Generates financial metrics: Daily/Monthly revenue and Plan-wise splits."""
     permission_classes = [IsAdminUser]
 
+    @extend_schema(tags=["Admin Payments"], summary="Revenue & subscription report", responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         # 1. Total Revenue All-Time
         total_revenue = PaymentTransaction.objects.filter(status='SUCCESS').aggregate(
@@ -46,7 +49,14 @@ class AdminRevenueReportAPIView(views.APIView):
 
 
 
-
+@extend_schema(
+    tags=["Admin Payments"],
+    summary="List payment transactions",
+    parameters=[
+        OpenApiParameter(name="status", type=str, location=OpenApiParameter.QUERY, description="Filter by status (e.g. SUCCESS, FAILED, PENDING, REFUNDED)"),
+        OpenApiParameter(name="employer_id", type=int, location=OpenApiParameter.QUERY, description="Filter by employer profile ID"),
+    ],
+)
 class AdminTransactionListAPIView(generics.ListAPIView):
     """Lists all transactions with filtering for audits (e.g., FAILED or SUSPICIOUS)."""
     permission_classes = [IsAdminUser]
@@ -76,6 +86,19 @@ class AdminRefundTransactionAPIView(views.APIView):
     """Triggers a refund via Razorpay and updates the internal financial ledger."""
     permission_classes = [IsAdminUser]
 
+    @extend_schema(
+        tags=["Admin Payments"],
+        summary="Refund a Razorpay transaction",
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "reason": {"type": "string", "example": "Admin requested refund"}
+                },
+            }
+        },
+        responses={200: OpenApiTypes.OBJECT},
+    )
     def post(self, request, transaction_id):
         transaction = get_object_or_404(PaymentTransaction, id=transaction_id)
         

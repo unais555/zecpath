@@ -9,6 +9,8 @@ from django.utils import timezone
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.throttling import ScopedRateThrottle
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 
 from .serializers import (
     UserRegistrationSerializers, 
@@ -41,6 +43,11 @@ class ThrottledLoginView(TokenObtainPairView):
 class LogoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+            tags=["Auth"],
+            request={"application/json": {"type": "object", "properties": {"refresh": {"type": "string"}}}},
+            responses={205: OpenApiTypes.OBJECT},
+        )
     def post(self, request):
         try:
             refresh_token = request.data["refresh"]
@@ -53,6 +60,7 @@ class LogoutAPIView(APIView):
 class EmployerDashboardAPIView(APIView):
     permission_classes = [IsEmployer]
 
+    @extend_schema(tags=["Users"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         profile = request.user.employer_profile
         return Response({
@@ -65,6 +73,7 @@ class EmployerDashboardAPIView(APIView):
 class CandidateDashboardAPIView(APIView):
     permission_classes = [IsCandidate]
 
+    @extend_schema(tags=["Users"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         profile = request.user.candidate_profile
         return Response({
@@ -106,6 +115,11 @@ class ResumeParseAndUploadAPIView(APIView):
     permission_classes = [IsAuthenticated, IsCandidate]
     parser_classes = [MultiPartParser, FormParser]
 
+    @extend_schema(
+        tags=["Users"],
+        request=ResumeUploadSerializer,
+        responses={200: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         serializer = ResumeUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

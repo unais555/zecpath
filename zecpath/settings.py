@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'apps.applications',
     'apps.payments',
 
+    "drf_spectacular",
     'django_celery_results',
     'django_celery_beat',
 ]
@@ -170,6 +171,10 @@ WSGI_APPLICATION = 'zecpath.wsgi.application'
 
 
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
     "DEFAULT_AUTHENTICATION_CLASSES" : (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
@@ -187,19 +192,42 @@ REST_FRAMEWORK = {
             'rest_framework.throttling.UserRateThrottle',
         ],
         'DEFAULT_THROTTLE_RATES': {
-            'anon': '20/minute',      # Unauthenticated users (e.g., login attempts)
-            'user': '100/minute',     # Standard authenticated users
+            'anon': '60/minute',      # Unauthenticated users (e.g., login attempts)
+            'user': '120/minute',     # Standard authenticated users
             'ai_report': '10/day',    # Custom strict throttle for OpenAI endpoints
             'login': '5/minute',
         }
 }
 
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Zecpath AI Job Portal API",
+    "DESCRIPTION": "REST API documentation for Zecpath — covering Authentication, Jobs, AI Interviews, Resume Parsing, and Razorpay Payments.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SECURITY": [{"BearerAuth": []}],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+}
+
+
+
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME" : timedelta(minutes=60),
+    "ACCESS_TOKEN_LIFETIME" : timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME" : timedelta(days=7),
     "ROTATE_REFRESH_TOKEN" : True,
     "BLACKLIST_AFTER_ROTATION" : True,
-
+    "UPDATE_LAST_LOGIN": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES" : ("Bearer",)
 }
 
@@ -366,3 +394,13 @@ LOGGING = {
 }
 
 
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # Required behind Render's proxy
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000          # 1 year HSTS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True      # Prevents MIME-sniffing XSS
+    X_FRAME_OPTIONS = "DENY"

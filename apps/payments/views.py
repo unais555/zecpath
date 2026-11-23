@@ -6,12 +6,13 @@ from rest_framework.permissions import IsAuthenticated
 from .models import SubscriptionPlan, PaymentTransaction
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
-from datetime import timezone
+from django.utils import timezone
 from rest_framework.permissions import IsAdminUser
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth, TruncDay
 from apps.payments.models import PaymentTransaction, UserSubscription
-
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 
 
 # Initialize Razorpay Client
@@ -20,6 +21,11 @@ client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_S
 class CreatePaymentOrderAPIView(views.APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=["Payments"],
+        request={"application/json": {"type": "object", "properties": {"plan_id": {"type": "integer"}}, "required": ["plan_id"]}},
+        responses={201: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         plan_id = request.data.get('plan_id')
         plan = SubscriptionPlan.objects.get(id=plan_id)
@@ -54,6 +60,20 @@ class CreatePaymentOrderAPIView(views.APIView):
 class VerifyPaymentAPIView(views.APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=["Payments"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "razorpay_payment_id": {"type": "string"},
+                    "razorpay_order_id": {"type": "string"},
+                    "razorpay_signature": {"type": "string"},
+                },
+            }
+        },
+        responses={200: OpenApiTypes.OBJECT},
+    )
     def post(self, request):
         payment_id = request.data.get('razorpay_payment_id')
         order_id = request.data.get('razorpay_order_id')
@@ -88,6 +108,7 @@ class SubscriptionStatusAPIView(views.APIView):
     """Returns the employer's current plan, status, and usage limits."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(tags=["Payments"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         if not hasattr(request.user, 'employer'):
             return Response({"error": "Only employers have billing profiles."}, status=status.HTTP_403_FORBIDDEN)

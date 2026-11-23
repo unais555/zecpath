@@ -1,0 +1,2287 @@
+openapi: 3.0.3
+info:
+  title: Zecpath AI Job Portal API
+  version: 1.0.0
+  description: REST API documentation for Zecpath — covering Authentication, Jobs,
+    AI Interviews, Resume Parsing, and Razorpay Payments.
+paths:
+  /api/admin/audit-logs/:
+    get:
+      operationId: api_admin_audit_logs_retrieve
+      summary: List latest 50 admin actions
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/admin/employer/{profile_id}/verify/:
+    patch:
+      operationId: api_admin_employer_verify_partial_update
+      summary: Verify an employer profile
+      parameters:
+      - in: path
+        name: profile_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/admin/jobs/{job_id}/remove/:
+    delete:
+      operationId: api_admin_jobs_remove_destroy
+      summary: Remove/close a spam job
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/admin/stats/:
+    get:
+      operationId: api_admin_stats_retrieve
+      summary: Platform-wide metrics
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/admin/users/{user_id}/block/:
+    patch:
+      operationId: api_admin_users_block_partial_update
+      summary: Block and disable a user
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /applications/{application_id}/report/:
+    get:
+      operationId: applications_report_retrieve
+      description: Generates and retrieves the AI Candidate Report for Employers.
+      parameters:
+      - in: path
+        name: application_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - AI Interviews
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /applications/{id}/override/:
+    patch:
+      operationId: applications_override_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - applications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationStatusUpdate'
+          description: ''
+  /auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh:
+                  type: string
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '205':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /auth/signup/:
+    post:
+      operationId: auth_signup_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationSerializersRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationSerializersRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationSerializersRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistrationSerializers'
+          description: ''
+  /candidate/applications/:
+    get:
+      operationId: candidate_applications_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - candidate
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApplicationList'
+          description: ''
+  /candidate/applications/{app_id}/timeline/:
+    get:
+      operationId: candidate_applications_timeline_list
+      parameters:
+      - in: path
+        name: app_id
+        schema:
+          type: integer
+        required: true
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - candidate
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApplicationTimelineList'
+          description: ''
+  /candidate/recommendations/:
+    get:
+      operationId: candidate_recommendations_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - candidate
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJobList'
+          description: ''
+  /candidate/resume/parse/:
+    post:
+      operationId: candidate_resume_parse_create
+      tags:
+      - Users
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResumeUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResumeUploadRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /candidate/saved-jobs/:
+    get:
+      operationId: candidate_saved_jobs_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - candidate
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSavedJobList'
+          description: ''
+    post:
+      operationId: candidate_saved_jobs_create
+      tags:
+      - candidate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedJobRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SavedJobRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavedJobRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedJob'
+          description: ''
+  /dashboard/candidate/:
+    get:
+      operationId: dashboard_candidate_retrieve
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /dashboard/employer/:
+    get:
+      operationId: dashboard_employer_retrieve
+      tags:
+      - Users
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /employer/analytics/:
+    get:
+      operationId: employer_analytics_retrieve
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /employer/analytics/premium/:
+    get:
+      operationId: employer_analytics_premium_retrieve
+      description: Generates hiring efficiency metrics and candidate success predictions.
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /employer/applicants/{job_id}/:
+    get:
+      operationId: employer_applicants_list
+      parameters:
+      - in: query
+        name: job__id
+        schema:
+          type: integer
+      - in: path
+        name: job_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - applied
+          - interview_scheduled
+          - rejected
+          - selected
+          - shortlisted
+        description: |-
+          * `applied` - Applied
+          * `shortlisted` - Shortlisted
+          * `interview_scheduled` - Interview Scheduled
+          * `rejected` - Rejected
+          * `selected` - Selected
+      tags:
+      - employer
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmployerApplicantList'
+          description: ''
+  /employer/applications/{id}/status/:
+    put:
+      operationId: employer_applications_status_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - employer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationStatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ApplicationStatusUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ApplicationStatusUpdateRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationStatusUpdate'
+          description: ''
+    patch:
+      operationId: employer_applications_status_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - employer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedApplicationStatusUpdateRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationStatusUpdate'
+          description: ''
+  /employer/jobs/:
+    get:
+      operationId: employer_jobs_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - employer
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJobList'
+          description: ''
+    post:
+      operationId: employer_jobs_create
+      tags:
+      - employer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+  /employer/jobs/{id}/:
+    get:
+      operationId: employer_jobs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - employer
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+    put:
+      operationId: employer_jobs_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - employer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+    patch:
+      operationId: employer_jobs_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - employer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedJobRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedJobRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+          description: ''
+    delete:
+      operationId: employer_jobs_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - employer
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /employers/:
+    get:
+      operationId: employers_list
+      parameters:
+      - in: query
+        name: domain
+        schema:
+          type: string
+      - in: query
+        name: is_verified
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: size
+        schema:
+          type: string
+          enum:
+          - 1-10
+          - 11-50
+          - 201-500
+          - 500+
+          - 51-200
+        description: |-
+          * `1-10` - 1-10 employees
+          * `11-50` - 11-50 employees
+          * `51-200` - 51-200 employees
+          * `201-500` - 201-500 employees
+          * `500+` - 500+ employees
+      tags:
+      - employers
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmployerProfileList'
+          description: ''
+  /interviews/{schedule_id}/reminders/:
+    get:
+      operationId: interviews_reminders_retrieve
+      description: Fetch the history of reminders sent for a specific interview.
+      parameters:
+      - in: path
+        name: schedule_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - AI Interviews
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: interviews_reminders_create
+      description: Manually trigger an ad-hoc reminder to the candidate.
+      parameters:
+      - in: path
+        name: schedule_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - AI Interviews
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /interviews/{session_id}/results/:
+    get:
+      operationId: interviews_results_retrieve
+      description: API for the Employer to retrieve the total scores for an interview.
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - AI Interviews
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /interviews/questions/{question_id}/submit-answer/:
+    post:
+      operationId: interviews_questions_submit_answer_create
+      description: API to submit a candidate's answer and instantly generate a score.
+      parameters:
+      - in: path
+        name: question_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - AI Interviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answer_text:
+                  type: string
+                confidence_indicator:
+                  type: number
+              required:
+              - answer_text
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /jobs/:
+    get:
+      operationId: jobs_list
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: The pagination cursor value.
+        schema:
+          type: string
+      - in: query
+        name: experience
+        schema:
+          type: integer
+      - in: query
+        name: job_type
+        schema:
+          type: string
+          enum:
+          - full_time
+          - intership
+          - part_time
+        description: |-
+          * `part_time` - Part_time
+          * `full_time` - Full_time
+          * `intership` - Internship
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: max_salary
+        schema:
+          type: number
+      - in: query
+        name: min_salary
+        schema:
+          type: number
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: skills
+        schema:
+          type: string
+      tags:
+      - jobs
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedJobList'
+          description: ''
+  /jobs/{job_id}/analytics/:
+    get:
+      operationId: jobs_analytics_retrieve
+      description: Provides hiring funnel metrics and conversion rates for a specific
+        job.
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Analytics
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /jobs/{job_id}/apply/:
+    post:
+      operationId: jobs_apply_create
+      parameters:
+      - in: path
+        name: job_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Jobs
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+          description: ''
+  /payments/admin/revenue/:
+    get:
+      operationId: payments_admin_revenue_retrieve
+      description: 'Generates financial metrics: Daily/Monthly revenue and Plan-wise
+        splits.'
+      summary: Revenue & subscription report
+      tags:
+      - Admin Payments
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /payments/admin/transactions/:
+    get:
+      operationId: payments_admin_transactions_list
+      description: Lists all transactions with filtering for audits (e.g., FAILED
+        or SUSPICIOUS).
+      summary: List payment transactions
+      parameters:
+      - in: query
+        name: employer_id
+        schema:
+          type: integer
+        description: Filter by employer profile ID
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Filter by status (e.g. SUCCESS, FAILED, PENDING, REFUNDED)
+      tags:
+      - Admin Payments
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPaymentTransactionList'
+          description: ''
+  /payments/admin/transactions/{transaction_id}/refund/:
+    post:
+      operationId: payments_admin_transactions_refund_create
+      description: Triggers a refund via Razorpay and updates the internal financial
+        ledger.
+      summary: Refund a Razorpay transaction
+      parameters:
+      - in: path
+        name: transaction_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Admin Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  example: Admin requested refund
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /payments/order/create/:
+    post:
+      operationId: payments_order_create_create
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan_id:
+                  type: integer
+              required:
+              - plan_id
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /payments/order/verify/:
+    post:
+      operationId: payments_order_verify_create
+      tags:
+      - Payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                razorpay_payment_id:
+                  type: string
+                razorpay_order_id:
+                  type: string
+                razorpay_signature:
+                  type: string
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /payments/status/:
+    get:
+      operationId: payments_status_retrieve
+      description: Returns the employer's current plan, status, and usage limits.
+      tags:
+      - Payments
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /profile/candidate/{id}/:
+    get:
+      operationId: profile_candidate_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateProfile'
+          description: ''
+    put:
+      operationId: profile_candidate_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidateProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CandidateProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CandidateProfileRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateProfile'
+          description: ''
+    patch:
+      operationId: profile_candidate_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCandidateProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCandidateProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCandidateProfileRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidateProfile'
+          description: ''
+    delete:
+      operationId: profile_candidate_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+  /profile/employer/{id}/:
+    get:
+      operationId: profile_employer_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerProfile'
+          description: ''
+    put:
+      operationId: profile_employer_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmployerProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmployerProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmployerProfileRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerProfile'
+          description: ''
+    patch:
+      operationId: profile_employer_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployerProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployerProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployerProfileRequest'
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmployerProfile'
+          description: ''
+    delete:
+      operationId: profile_employer_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - profile
+      security:
+      - jwtAuth: []
+      - BearerAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job:
+          type: integer
+        job_title:
+          type: string
+          readOnly: true
+        company_name:
+          type: string
+          readOnly: true
+        resume_snapshot:
+          nullable: true
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        status:
+          $ref: '#/components/schemas/NewStatusEnum'
+        status_display:
+          type: string
+          readOnly: true
+        applied_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - applied_at
+      - company_name
+      - id
+      - job
+      - job_title
+      - status_display
+    ApplicationStatusUpdate:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/NewStatusEnum'
+    ApplicationStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/NewStatusEnum'
+        notes:
+          type: string
+          writeOnly: true
+    ApplicationTimeline:
+      type: object
+      properties:
+        old_status:
+          $ref: '#/components/schemas/NewStatusEnum'
+        new_status:
+          $ref: '#/components/schemas/NewStatusEnum'
+        notes:
+          type: string
+          description: Optional feedback from the employer.
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - new_status
+      - old_status
+      - timestamp
+    BlankEnum:
+      enum:
+      - ''
+    CandidateProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        skills:
+          type: string
+          description: Comma-separated list of skills (e.g., Python, Django, React)
+        education:
+          type: string
+          description: Details of degrees, certifications, and institutions
+        experience:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Total years of professional experience
+        expected_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          description: Expected annual salary
+        resume:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - id
+    CandidateProfileRequest:
+      type: object
+      properties:
+        skills:
+          type: string
+          description: Comma-separated list of skills (e.g., Python, Django, React)
+        education:
+          type: string
+          description: Details of degrees, certifications, and institutions
+        experience:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Total years of professional experience
+        expected_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          description: Expected annual salary
+        resume:
+          type: string
+          format: binary
+          nullable: true
+    EmployerApplicant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job_title:
+          type: string
+          readOnly: true
+        candidate_email:
+          type: string
+          format: email
+          readOnly: true
+        candidate_skills:
+          type: string
+          readOnly: true
+        candidate_experience:
+          type: integer
+          readOnly: true
+        resume_snapshot:
+          nullable: true
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        status:
+          $ref: '#/components/schemas/NewStatusEnum'
+        applied_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - applied_at
+      - candidate_email
+      - candidate_experience
+      - candidate_skills
+      - id
+      - job_title
+    EmployerProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        company_name:
+          type: string
+          maxLength: 255
+        domain:
+          type: string
+          description: e.g., IT, Healthcare, Finance
+          maxLength: 100
+        size:
+          oneOf:
+          - $ref: '#/components/schemas/SizeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        is_verified:
+          type: boolean
+          readOnly: true
+          description: Indicates if the company's identity has been vetted.
+      required:
+      - company_name
+      - id
+      - is_verified
+    EmployerProfileRequest:
+      type: object
+      properties:
+        company_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        domain:
+          type: string
+          description: e.g., IT, Healthcare, Finance
+          maxLength: 100
+        size:
+          oneOf:
+          - $ref: '#/components/schemas/SizeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+      required:
+      - company_name
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        skills:
+          type: string
+          maxLength: 255
+        experience:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        min_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        max_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        location:
+          type: string
+          maxLength: 255
+        job_type:
+          $ref: '#/components/schemas/JobTypeEnum'
+        status:
+          $ref: '#/components/schemas/JobStatusEnum'
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        auto_shortlist_threshold:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: ATS score (0-100) required to automatically shortlist.
+        auto_reject_threshold:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: ATS score (0-100) below which candidates are automatically
+            rejected.
+        is_automation_enabled:
+          type: boolean
+        employer:
+          type: integer
+          readOnly: true
+      required:
+      - created_at
+      - description
+      - employer
+      - experience
+      - id
+      - location
+      - skills
+      - title
+      - updated_at
+    JobRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+        skills:
+          type: string
+          minLength: 1
+          maxLength: 255
+        experience:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        min_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        max_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        location:
+          type: string
+          minLength: 1
+          maxLength: 255
+        job_type:
+          $ref: '#/components/schemas/JobTypeEnum'
+        status:
+          $ref: '#/components/schemas/JobStatusEnum'
+        is_active:
+          type: boolean
+        auto_shortlist_threshold:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: ATS score (0-100) required to automatically shortlist.
+        auto_reject_threshold:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: ATS score (0-100) below which candidates are automatically
+            rejected.
+        is_automation_enabled:
+          type: boolean
+      required:
+      - description
+      - experience
+      - location
+      - skills
+      - title
+    JobStatusEnum:
+      enum:
+      - draft
+      - open
+      - closed
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `open` - Open
+        * `closed` - Closed
+    JobTypeEnum:
+      enum:
+      - part_time
+      - full_time
+      - intership
+      type: string
+      description: |-
+        * `part_time` - Part_time
+        * `full_time` - Full_time
+        * `intership` - Internship
+    NewStatusEnum:
+      enum:
+      - applied
+      - shortlisted
+      - interview_scheduled
+      - rejected
+      - selected
+      type: string
+      description: |-
+        * `applied` - Applied
+        * `shortlisted` - Shortlisted
+        * `interview_scheduled` - Interview Scheduled
+        * `rejected` - Rejected
+        * `selected` - Selected
+    PaginatedApplicationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Application'
+    PaginatedApplicationTimelineList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationTimeline'
+    PaginatedEmployerApplicantList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployerApplicant'
+    PaginatedEmployerProfileList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmployerProfile'
+    PaginatedJobList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+    PaginatedPaymentTransactionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentTransaction'
+    PaginatedSavedJobList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavedJob'
+    PatchedApplicationStatusUpdateRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/NewStatusEnum'
+        notes:
+          type: string
+          writeOnly: true
+    PatchedCandidateProfileRequest:
+      type: object
+      properties:
+        skills:
+          type: string
+          description: Comma-separated list of skills (e.g., Python, Django, React)
+        education:
+          type: string
+          description: Details of degrees, certifications, and institutions
+        experience:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: Total years of professional experience
+        expected_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          description: Expected annual salary
+        resume:
+          type: string
+          format: binary
+          nullable: true
+    PatchedEmployerProfileRequest:
+      type: object
+      properties:
+        company_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        domain:
+          type: string
+          description: e.g., IT, Healthcare, Finance
+          maxLength: 100
+        size:
+          oneOf:
+          - $ref: '#/components/schemas/SizeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+    PatchedJobRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+        skills:
+          type: string
+          minLength: 1
+          maxLength: 255
+        experience:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        min_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        max_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        location:
+          type: string
+          minLength: 1
+          maxLength: 255
+        job_type:
+          $ref: '#/components/schemas/JobTypeEnum'
+        status:
+          $ref: '#/components/schemas/JobStatusEnum'
+        is_active:
+          type: boolean
+        auto_shortlist_threshold:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: ATS score (0-100) required to automatically shortlist.
+        auto_reject_threshold:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: ATS score (0-100) below which candidates are automatically
+            rejected.
+        is_automation_enabled:
+          type: boolean
+    PaymentTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employer:
+          type: integer
+        company_name:
+          type: string
+          readOnly: true
+        employer_email:
+          type: string
+          format: email
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        currency:
+          type: string
+          maxLength: 3
+        status:
+          $ref: '#/components/schemas/PaymentTransactionStatusEnum'
+        gateway_transaction_id:
+          type: string
+          maxLength: 100
+        error_message:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - company_name
+      - created_at
+      - employer
+      - employer_email
+      - gateway_transaction_id
+      - id
+      - status
+    PaymentTransactionStatusEnum:
+      enum:
+      - SUCCESS
+      - FAILED
+      - PENDING
+      - REFUNDED
+      type: string
+      description: |-
+        * `SUCCESS` - Success
+        * `FAILED` - Failed
+        * `PENDING` - Pending
+        * `REFUNDED` - Refunded
+    ResumeUploadRequest:
+      type: object
+      properties:
+        resume:
+          type: string
+          format: binary
+      required:
+      - resume
+    RoleEnum:
+      enum:
+      - admin
+      - employer
+      - candidate
+      type: string
+      description: |-
+        * `admin` - Admin
+        * `employer` - Employer
+        * `candidate` - Candidate
+    SavedJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        job:
+          type: integer
+        job_details:
+          allOf:
+          - $ref: '#/components/schemas/Job'
+          readOnly: true
+        saved_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - job
+      - job_details
+      - saved_at
+    SavedJobRequest:
+      type: object
+      properties:
+        job:
+          type: integer
+      required:
+      - job
+    SizeEnum:
+      enum:
+      - 1-10
+      - 11-50
+      - 51-200
+      - 201-500
+      - 500+
+      type: string
+      description: |-
+        * `1-10` - 1-10 employees
+        * `11-50` - 11-50 employees
+        * `51-200` - 51-200 employees
+        * `201-500` - 201-500 employees
+        * `500+` - 500+ employees
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    UserRegistrationSerializers:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          nullable: true
+          maxLength: 15
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - role
+    UserRegistrationSerializersRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        phone:
+          type: string
+          nullable: true
+          maxLength: 15
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - password
+      - role
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

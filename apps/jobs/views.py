@@ -11,7 +11,8 @@ from django.views.decorators.cache import cache_page
 from rest_framework.throttling import UserRateThrottle
 from django.db.models import Avg, Count, Q, F, ExpressionWrapper, fields
 from apps.payments.throttles import PremiumTierThrottle
-
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 
 from apps.users.permissions import IsEmployer, IsCandidate
 from .models import ( Job, 
@@ -53,6 +54,8 @@ class EmployerJobListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsEmployer, CanPostJob]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Job.objects.none()
         return Job.objects.filter(employer=self.request.user.employer_profile).order_by('-created_at')
 
     def perform_create(self, serializer):
@@ -94,6 +97,7 @@ class PublicJobListAPIView(generics.ListAPIView):
 class ApplyJobAPIView(APIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
+    @extend_schema(tags=["Jobs"], request=None, responses={201: ApplicationSerializer})
     def post(self, request, job_id):
         job = get_object_or_404(Job, id=job_id)
         candidate = request.user.candidate_profile
@@ -130,6 +134,8 @@ class CandidateApplicationHistoryAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Application.objects.none()
         return Application.objects.filter(
             candidate=self.request.user.candidate_profile
             ).select_related('job', 'job__employer').order_by('-applied_at')
@@ -161,6 +167,7 @@ class EmployerApplicationStatusAPIView(generics.UpdateAPIView):
 
 class EmployerApplicantListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsEmployer]
+    queryset = Application.objects.none()
     serializer_class = EmployerApplicantSerializer
 
     filter_backends = [DjangoFilterBackend, SearchFilter]
@@ -199,6 +206,7 @@ class EmployerApplicantListAPIView(generics.ListAPIView):
 class EmployerAnalyticsAPIView(APIView):
     permission_classes = [IsAuthenticated, IsEmployer]
 
+    @extend_schema(tags=["Analytics"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         employer = request.user.employer_profile
         total_active_jobs = Job.objects.filter(employer=employer, is_active=True).count()
@@ -232,6 +240,8 @@ class CandidateSavedJobsAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SavedJob.objects.none()
         return SavedJob.objects.filter(
             candidate=self.request.user.candidate_profile
         ).select_related('job', 'job__employer').order_by('-saved_at')
@@ -245,6 +255,8 @@ class CandidateApplicationTimelineAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ApplicationLog.objects.none()
         application_id = self.kwargs.get('app_id')
         return ApplicationLog.objects.filter(
             application__id=application_id,
@@ -256,6 +268,8 @@ class CandidateJobRecommendationsAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsCandidate]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Job.objects.none()
         candidate = self.request.user.candidate_profile
         candidate_skills = candidate.skills.split(',') if candidate.skills else []
 
@@ -275,6 +289,8 @@ class CandidateJobRecommendationsAPIView(generics.ListAPIView):
 
 class EmployerApplicationOverrideAPIView(generics.UpdateAPIView):
     queryset = Application.objects.all()
+    serializer_class = ApplicationStatusUpdateSerializer  # <-- Add this line
+    http_method_names = ["patch"]
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, pk):
@@ -303,7 +319,21 @@ class EmployerApplicationOverrideAPIView(generics.UpdateAPIView):
 
 class SubmitAnswerAPIView(views.APIView):
     """API to submit a candidate's answer and instantly generate a score."""
-    
+
+    @extend_schema(
+        tags=["AI Interviews"],
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "answer_text": {"type": "string"},
+                    "confidence_indicator": {"type": "number"},
+                },
+                "required": ["answer_text"],
+            }
+        },
+        responses={201: OpenApiTypes.OBJECT},
+    )
     def post(self, request, question_id):
         question = get_object_or_404(AIQuestion, id=question_id)
         
@@ -332,7 +362,8 @@ class SubmitAnswerAPIView(views.APIView):
 
 class RetrieveInterviewResultsAPIView(views.APIView):
     """API for the Employer to retrieve the total scores for an interview."""
-    
+
+    @extend_schema(tags=["AI Interviews"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, session_id):
         session = get_object_or_404(AIInterviewSession, id=session_id)
         answers = AIAnswer.objects.filter(question__session=session)
@@ -364,7 +395,7 @@ class RetrieveInterviewResultsAPIView(views.APIView):
 
 class InterviewReminderAPIView(views.APIView):
     """API for viewing reminder history and manually triggering ad-hoc reminders."""
-    
+    @extend_schema(tags=["AI Interviews"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, schedule_id):
         """Fetch the history of reminders sent for a specific interview."""
         schedule = get_object_or_404(InterviewSchedule, id=schedule_id)
@@ -381,6 +412,8 @@ class InterviewReminderAPIView(views.APIView):
             "reminders_history": list(reminders)
         }, status=status.HTTP_200_OK)
 
+
+    @extend_schema(tags=["AI Interviews"], request=None, responses={200: OpenApiTypes.OBJECT})
     def post(self, request, schedule_id):
         """Manually trigger an ad-hoc reminder to the candidate."""
         schedule = get_object_or_404(InterviewSchedule, id=schedule_id)
@@ -433,7 +466,7 @@ class CandidateReportAPIView(views.APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [AIReportThrottle]
     
-
+    @extend_schema(tags=["AI Interviews"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, application_id):
         application = get_object_or_404(Application, id=application_id)
         
@@ -476,6 +509,7 @@ class JobAnalyticsAPIView(APIView):
     """Provides hiring funnel metrics and conversion rates for a specific job."""
     permission_classes = [IsAuthenticated, IsEmployer]
 
+    @extend_schema(tags=["Analytics"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request, job_id):
         # Access Control: Only Employers
         if request.user.role != getattr(request.user.Role, 'EMPLOYER', 'EMPLOYER'):
@@ -514,6 +548,7 @@ class PremiumAnalyticsAPIView(views.APIView):
     # 2. Prevent Misuse via dynamic throttling
     throttle_classes = [PremiumTierThrottle]
 
+    @extend_schema(tags=["Analytics"], responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         employer = request.user.employer
         

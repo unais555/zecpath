@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAdminUser
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from .models import EmployerProfile, CandidateProfile, AdminActionLog
 from apps.jobs.models import Job, Application
@@ -17,7 +19,7 @@ def log_admin_action(admin_user, action, target):
 class AdminPlatformStatsAPIView(APIView):
     permission_classes = [IsAdminUser]
 
-
+    @extend_schema(tags=["Admin"], summary="Platform-wide metrics", responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         metrics = {
             "users" : {
@@ -41,6 +43,7 @@ class AdminPlatformStatsAPIView(APIView):
 class AdminVerifyEmployerAPIView(APIView):
     permission_classes = [IsAdminUser]
 
+    @extend_schema(tags=["Admin"], summary="Verify an employer profile", request=None, responses={200: OpenApiTypes.OBJECT})
     def patch(self, request, profile_id):
         employer = get_object_or_404(EmployerProfile, id=profile_id)
         employer.is_verified = True
@@ -53,7 +56,7 @@ class AdminVerifyEmployerAPIView(APIView):
 class AdminModerateUserAPIView(APIView):
     permission_classes = [IsAdminUser]
 
-
+    @extend_schema(tags=["Admin"], summary="Block and disable a user", request=None, responses={200: OpenApiTypes.OBJECT})
     def patch(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         user.is_active = False
@@ -66,6 +69,7 @@ class AdminModerateUserAPIView(APIView):
 class AdminModerateJobAPIView(APIView):
     permission_classes = [IsAdminUser]
 
+    @extend_schema(tags=["Admin"], summary="Remove/close a spam job", responses={200: OpenApiTypes.OBJECT})
     def delete(self, request, job_id):
         job = get_object_or_404(Job, id=job_id)
         job.is_active = False
@@ -77,10 +81,10 @@ class AdminModerateJobAPIView(APIView):
 
 
 
-class AdminAuditLogAPIView(APIView):
-    
+class AdminAuditLogAPIView(APIView): 
     permission_classes = [IsAdminUser]
 
+    @extend_schema(tags=["Admin"], summary="List latest 50 admin actions", responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         logs = AdminActionLog.objects.select_related('admin').order_by('-timestamp')[:50]
         data = [
