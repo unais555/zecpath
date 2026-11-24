@@ -110,7 +110,7 @@ def process_ai_call_trigger(self, application_id):
 def execute_external_call(self, call_log_id):
     """This task actually pings Twilio/OpenAI."""
     call_log = AICallLog.objects.get(id=call_log_id)
-    candidate_phone = call_log.application.candidate.phone_number
+    candidate_phone = call_log.application.candidate.user.phone
 
     call_log.status = AICallLog.CallStatus.IN_PROGRESS
     call_log.save(update_fields=["status"])
